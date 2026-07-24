@@ -172,4 +172,16 @@ export const quizBank: Record<Subject, Record<Difficulty, QuizQ[]>> = {
       { q: "A metaphor is…", options: ["a direct comparison", "a comparison using like/as", "an exaggeration", "a sound word"], answer: 0 },
     ],
   },
+  "Career Counseling": {
+    easy: [
+      { q: "Which of these is a STEM field?", options: ["Engineering", "Painting", "Poetry", "Cooking"], answer: 0 },
+    ],
+    medium: [
+      { q: "MDCAT in Pakistan is typically required for admission to…", options: ["Engineering", "Medical colleges", "Law schools", "Business schools"], answer: 1 },
+    ],
+    hard: [
+      { q: "A person who enjoys building things, solving physics problems, and CAD software is best suited for…", options: ["Journalism", "Mechanical Engineering", "Marketing", "Fine Arts"], answer: 1 },
+    ],
+  },
 };
+
