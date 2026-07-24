@@ -64,6 +64,19 @@ function ClassDetail() {
   const [file, setFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [dmStudent, setDmStudent] = useState<StudentRow | null>(null);
+  const [editingClass, setEditingClass] = useState(false);
+  const [classDraft, setClassDraft] = useState({ title: "", class_code: "", grade: "", description: "" });
+  const [savingClass, setSavingClass] = useState(false);
+  const [deleteClassOpen, setDeleteClassOpen] = useState(false);
+  const [deletingClass, setDeletingClass] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [asnDraft, setAsnDraft] = useState({ title: "", description: "", link_url: "" });
+  const [asnDueDate, setAsnDueDate] = useState<Date | undefined>(undefined);
+  const [asnDueTime, setAsnDueTime] = useState<string>("23:59");
+  const [savingAsn, setSavingAsn] = useState(false);
+  const [pendingDeleteAsn, setPendingDeleteAsn] = useState<Assignment | null>(null);
+  const [deletingAsn, setDeletingAsn] = useState(false);
+  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     if (!user) return;
