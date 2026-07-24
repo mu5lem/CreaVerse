@@ -476,71 +476,38 @@ function AuthPage() {
             </>
           )}
 
-          {method === "email" ? (
-            <>
-              <Field label="Email">
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputCls}
-                  placeholder="you@example.com"
-                />
-              </Field>
-              <Field label="Password">
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  autoComplete={isSignup ? "new-password" : "current-password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputCls}
-                  placeholder="••••••••"
-                />
-                {!isSignup && (
-                  <button
-                    type="button"
-                    onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
-                    className="mt-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                )}
-              </Field>
-            </>
-          ) : (
-            <>
-              <Field label="Phone number">
-                <input
-                  type="tel"
-                  required
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className={inputCls}
-                  placeholder="+92 300 1234567"
-                />
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  Full international format (e.g. +92 300 1234567). Local 03xx… numbers work too.
-                </p>
-              </Field>
-              <Field label="Password">
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  autoComplete={isSignup ? "new-password" : "current-password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputCls}
-                  placeholder="••••••••"
-                />
-              </Field>
-            </>
-          )}
+          <Field label="Email">
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputCls}
+              placeholder="you@example.com"
+            />
+          </Field>
+          <Field label="Password">
+            <input
+              type="password"
+              required
+              minLength={6}
+              autoComplete={isSignup ? "new-password" : "current-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={inputCls}
+              placeholder="••••••••"
+            />
+            {!isSignup && (
+              <button
+                type="button"
+                onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                className="mt-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Forgot password?
+              </button>
+            )}
+          </Field>
 
           {isSignup && (
             <label className="flex items-start gap-2 rounded-lg border border-border bg-[var(--color-parchment)]/40 p-3 text-xs text-muted-foreground">
