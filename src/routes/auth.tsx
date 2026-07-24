@@ -423,31 +423,6 @@ function AuthPage() {
           <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
         </div>
 
-        {/* Method toggle */}
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-full border border-border bg-card p-1">
-          <button
-            type="button"
-            onClick={() => switchMethod("email")}
-            className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              method === "email"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Mail className="h-4 w-4" /> Email
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMethod("phone")}
-            className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              method === "phone"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Phone className="h-4 w-4" /> Phone
-          </button>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
           {isSignup && (
