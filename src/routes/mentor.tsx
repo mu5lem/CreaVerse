@@ -216,6 +216,19 @@ function MentorChat() {
           <button onClick={() => setLang("en")} className={`rounded-full px-3 py-1 ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
           <button onClick={() => setLang("ur")} className={`rounded-full px-3 py-1 ${lang === "ur" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>اردو</button>
         </div>
+        <div className="ml-auto flex items-center gap-2">
+          {loadingHistory && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Loading history…</span>
+          )}
+          <button
+            type="button"
+            onClick={clearHistory}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+            title="Clear saved chats for this subject"
+          >
+            <Trash2 className="h-3 w-3" /> Clear history
+          </button>
+        </div>
       </div>
       <div ref={scroller} className="h-96 space-y-4 overflow-y-auto p-6">
         {msgs.map((m, i) => (
