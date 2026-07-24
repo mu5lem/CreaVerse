@@ -48,8 +48,12 @@ function SettingsPage() {
   const [theme, setTheme] = useState<ThemePref>("system");
   const [language, setLanguage] = useState<LangPref>("en");
   const [prefs, setPrefs] = useState({ assignment: true, submission: true, grade: true });
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPw, setChangingPw] = useState(false);
   const [saving, setSaving] = useState(false);
+
 
   useEffect(() => {
     if (!profile) return;
