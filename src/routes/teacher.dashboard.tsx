@@ -71,10 +71,9 @@ function TeacherDashboard() {
         const byStudent = new Map<string, number[]>();
         (subs ?? []).forEach((s) => {
           if (!s.grade) return;
-          const m = s.grade.match(/(\d+(?:\.\d+)?)/);
-          if (!m) return;
-          const v = parseFloat(m[1]);
-          const score = v > 10 ? v : v * 10;
+          const v = parseFloat(s.grade);
+          if (!Number.isFinite(v)) return;
+          const score = Math.max(0, Math.min(100, v));
           if (!byStudent.has(s.student_id)) byStudent.set(s.student_id, []);
           byStudent.get(s.student_id)!.push(score);
         });
