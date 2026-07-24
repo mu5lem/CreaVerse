@@ -38,6 +38,9 @@ interface Assignment {
   media_url: string | null;
   link_url: string | null;
   due_date: string | null;
+  assignment_kind: string;
+  questions: Question[] | null;
+  total_marks: number | null;
 }
 interface Submission {
   id: string;
@@ -47,7 +50,27 @@ interface Submission {
   grade: string | null;
   feedback: string | null;
   submitted_at: string;
+  answers: AnswerMap | null;
+  obtained_marks: number | null;
 }
+
+function StudentClass() {
+  const { classCode } = Route.useParams();
+  const { profile, signOut, user } = useAuth();
+  const [cls, setCls] = useState<ClassRow | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<Record<string, Submission>>({});
+  const [loading, setLoading] = useState(true);
+  const [drafts, setDrafts] = useState<Record<string, { notes: string; file: File | null }>>({});
+  const [quizDrafts, setQuizDrafts] = useState<Record<string, AnswerMap>>({});
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  const [editingSub, setEditingSub] = useState<Record<string, string>>({});
+  const [enrollment, setEnrollment] = useState<{ suspended: boolean } | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<{ kind: "leave" | "reactivate" } | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [leaveReason, setLeaveReason] = useState("");
+  const [submittingLeave, setSubmittingLeave] = useState(false);
+  const confirm = useConfirm();
 
 function StudentClass() {
   const { classCode } = Route.useParams();
