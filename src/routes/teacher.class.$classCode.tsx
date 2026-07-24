@@ -173,7 +173,7 @@ function ClassDetail() {
           link_url: asnKind === "quiz" ? null : (form.link_url.trim() || null),
           due_date: dueIso,
           assignment_kind: asnKind,
-          questions: asnKind === "quiz" ? (questions as unknown as object) : null,
+          questions: asnKind === "quiz" ? (JSON.parse(JSON.stringify(questions))) : null,
           total_marks: asnKind === "quiz" ? totalPoints(questions) : null,
         })
         .select("*")
