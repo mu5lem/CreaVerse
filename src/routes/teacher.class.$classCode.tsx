@@ -1,15 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Users, Upload, MessageSquare, X } from "lucide-react";
+import { FileText, Users, Upload, MessageSquare, X, CalendarIcon } from "lucide-react";
 import { ClassChat } from "@/components/ClassChat";
 import { LinkPreview } from "@/components/LinkPreview";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/teacher/class/$classCode")({
   component: () => (
