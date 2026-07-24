@@ -66,6 +66,15 @@ export const mentorResponses: ResponseMap = {
       { keywords: ["مضمون", "لکھنا"], reply: "ترتیب: تعارف → دلائل (ہر پیراگراف ایک نقطہ) → نتیجہ۔" },
     ],
   },
+  "Career Counseling": {
+    en: [
+      { keywords: ["career", "field", "future"], reply: "Tell me a bit about what you enjoy, what subjects feel easy, and what kind of life you'd like — I'll help you map that to fields that fit." },
+    ],
+    ur: [
+      { keywords: ["کیریئر", "شعبہ"], reply: "مجھے بتائیں آپ کو کیا پسند ہے اور کون سا مضمون آسان لگتا ہے — میں آپ کو موزوں شعبے تجویز کروں گا۔" },
+    ],
+  },
+
 };
 
 export function mentorReply(subject: Subject, lang: Lang, text: string): string {
