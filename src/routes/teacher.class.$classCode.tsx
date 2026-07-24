@@ -19,6 +19,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "@tanstack/react-router";
+import { QuizBuilder } from "@/components/QuizBuilder";
+import type { Question } from "@/lib/quiz-types";
+import { totalPoints } from "@/lib/quiz-types";
+import { StudentReportDialog } from "@/components/StudentReportDialog";
 
 export const Route = createFileRoute("/teacher/class/$classCode")({
   component: () => (
