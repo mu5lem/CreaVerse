@@ -238,12 +238,47 @@ function ClassDetail() {
                   <label className="block text-xs uppercase tracking-wider text-muted-foreground">
                     Due date
                   </label>
-                  <input
-                    type="datetime-local"
-                    value={form.due_date}
-                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                  />
+                  <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex-1 inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-left text-sm",
+                            !dueDate && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="h-4 w-4" />
+                          {dueDate ? format(dueDate, "PPP") : "Pick a date"}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dueDate}
+                          onSelect={setDueDate}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <input
+                      type="time"
+                      value={dueTime}
+                      onChange={(e) => setDueTime(e.target.value)}
+                      className="w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    />
+                    {dueDate && (
+                      <button
+                        type="button"
+                        onClick={() => setDueDate(undefined)}
+                        className="rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+                        title="Clear due date"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     placeholder="Attach a link (optional) — https://…"
