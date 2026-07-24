@@ -163,6 +163,111 @@ function ClassDetail() {
     }
   };
 
+  const openEditClass = () => {
+    if (!cls) return;
+    setClassDraft({
+      title: cls.title,
+      class_code: cls.class_code,
+      grade: cls.grade ?? "",
+      description: cls.description ?? "",
+    });
+    setEditingClass(true);
+  };
+
+  const saveClass = async () => {
+    if (!cls || !user) return;
+    const newCode = classDraft.class_code.trim().toUpperCase();
+    const newTitle = classDraft.title.trim();
+    if (!newCode || !newTitle) return toast.error("Title and class code are required");
+    setSavingClass(true);
+    const { error } = await supabase
+      .from("classes")
+      .update({
+        title: newTitle,
+        class_code: newCode,
+        grade: classDraft.grade.trim() || null,
+        description: classDraft.description.trim() || null,
+      })
+      .eq("id", cls.id)
+      .eq("teacher_id", user.id);
+    setSavingClass(false);
+    if (error) return toast.error(error.message);
+    toast.success("Class updated");
+    setEditingClass(false);
+    if (newCode !== cls.class_code) {
+      navigate({ to: "/teacher/class/$classCode", params: { classCode: newCode } });
+    } else {
+      await load();
+    }
+  };
+
+  const confirmDeleteClass = async () => {
+    if (!cls || !user) return;
+    setDeletingClass(true);
+    const { error } = await supabase
+      .from("classes")
+      .delete()
+      .eq("id", cls.id)
+      .eq("teacher_id", user.id);
+    setDeletingClass(false);
+    setDeleteClassOpen(false);
+    if (error) return toast.error(error.message);
+    toast.success("Class deleted");
+    navigate({ to: "/teacher/dashboard" });
+  };
+
+  const openEditAssignment = (a: Assignment) => {
+    setAsnDraft({ title: a.title, description: a.description ?? "", link_url: a.link_url ?? "" });
+    if (a.due_date) {
+      const d = new Date(a.due_date);
+      setAsnDueDate(d);
+      setAsnDueTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+    } else {
+      setAsnDueDate(undefined);
+      setAsnDueTime("23:59");
+    }
+    setEditingAssignment(a);
+  };
+
+  const saveAssignment = async () => {
+    if (!editingAssignment) return;
+    const title = asnDraft.title.trim();
+    if (!title) return toast.error("Title is required");
+    let dueIso: string | null = null;
+    if (asnDueDate) {
+      const [hh, mm] = (asnDueTime || "23:59").split(":").map((v) => parseInt(v, 10));
+      const d = new Date(asnDueDate);
+      d.setHours(Number.isFinite(hh) ? hh : 23, Number.isFinite(mm) ? mm : 59, 0, 0);
+      dueIso = d.toISOString();
+    }
+    setSavingAsn(true);
+    const { error } = await supabase
+      .from("assignments")
+      .update({
+        title,
+        description: asnDraft.description.trim() || null,
+        link_url: asnDraft.link_url.trim() || null,
+        due_date: dueIso,
+      })
+      .eq("id", editingAssignment.id);
+    setSavingAsn(false);
+    if (error) return toast.error(error.message);
+    toast.success("Assignment updated");
+    setEditingAssignment(null);
+    await load();
+  };
+
+  const confirmDeleteAssignment = async () => {
+    if (!pendingDeleteAsn) return;
+    setDeletingAsn(true);
+    const { error } = await supabase.from("assignments").delete().eq("id", pendingDeleteAsn.id);
+    setDeletingAsn(false);
+    setPendingDeleteAsn(null);
+    if (error) return toast.error(error.message);
+    toast.success("Assignment deleted");
+    await load();
+  };
+
   if (!profile) return null;
 
   return (
