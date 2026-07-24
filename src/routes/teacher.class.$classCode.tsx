@@ -763,6 +763,20 @@ function ClassDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {reportStudent && cls && (
+        <StudentReportDialog
+          open={!!reportStudent}
+          onClose={() => setReportStudent(null)}
+          classCode={cls.class_code}
+          student={{
+            student_id: reportStudent.student_id,
+            email: reportStudent.email,
+            full_name: reportStudent.full_name,
+            suspended: !!suspendedMap[reportStudent.student_id],
+          }}
+          onChanged={load}
+        />
+      )}
     </div>
   );
 }
