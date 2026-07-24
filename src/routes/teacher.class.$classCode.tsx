@@ -7,13 +7,18 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Users, Upload, MessageSquare, X, CalendarIcon } from "lucide-react";
+import { FileText, Users, Upload, MessageSquare, X, CalendarIcon, Pencil, Trash2 } from "lucide-react";
 import { ClassChat } from "@/components/ClassChat";
 import { LinkPreview } from "@/components/LinkPreview";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/teacher/class/$classCode")({
   component: () => (
