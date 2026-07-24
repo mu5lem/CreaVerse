@@ -1,15 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Users, Upload, MessageSquare, X } from "lucide-react";
+import { FileText, Users, Upload, MessageSquare, X, CalendarIcon, Pencil, Trash2 } from "lucide-react";
 import { ClassChat } from "@/components/ClassChat";
 import { LinkPreview } from "@/components/LinkPreview";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/teacher/class/$classCode")({
   component: () => (
@@ -49,10 +58,25 @@ function ClassDetail() {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ title: "", description: "", due_date: "", link_url: "" });
+  const [form, setForm] = useState({ title: "", description: "", link_url: "" });
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [dueTime, setDueTime] = useState<string>("23:59");
   const [file, setFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [dmStudent, setDmStudent] = useState<StudentRow | null>(null);
+  const [editingClass, setEditingClass] = useState(false);
+  const [classDraft, setClassDraft] = useState({ title: "", class_code: "", grade: "", description: "" });
+  const [savingClass, setSavingClass] = useState(false);
+  const [deleteClassOpen, setDeleteClassOpen] = useState(false);
+  const [deletingClass, setDeletingClass] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [asnDraft, setAsnDraft] = useState({ title: "", description: "", link_url: "" });
+  const [asnDueDate, setAsnDueDate] = useState<Date | undefined>(undefined);
+  const [asnDueTime, setAsnDueTime] = useState<string>("23:59");
+  const [savingAsn, setSavingAsn] = useState(false);
+  const [pendingDeleteAsn, setPendingDeleteAsn] = useState<Assignment | null>(null);
+  const [deletingAsn, setDeletingAsn] = useState(false);
+  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -97,6 +121,14 @@ function ClassDetail() {
     if (creating || !form.title.trim()) return;
     setCreating(true);
     try {
+      let dueIso: string | null = null;
+      if (dueDate) {
+        const [hh, mm] = (dueTime || "23:59").split(":").map((v) => parseInt(v, 10));
+        const d = new Date(dueDate);
+        d.setHours(Number.isFinite(hh) ? hh : 23, Number.isFinite(mm) ? mm : 59, 0, 0);
+        if (Number.isNaN(d.getTime())) throw new Error("Invalid due date");
+        dueIso = d.toISOString();
+      }
       const { data: created, error } = await supabase
         .from("assignments")
         .insert({
@@ -104,7 +136,7 @@ function ClassDetail() {
           title: form.title.trim(),
           description: form.description.trim() || null,
           link_url: form.link_url.trim() || null,
-          due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
+          due_date: dueIso,
         })
         .select("*")
         .single();
@@ -119,7 +151,9 @@ function ClassDetail() {
         await supabase.from("assignments").update({ media_url: path }).eq("id", created.id);
       }
       toast.success("Assignment created");
-      setForm({ title: "", description: "", due_date: "", link_url: "" });
+      setForm({ title: "", description: "", link_url: "" });
+      setDueDate(undefined);
+      setDueTime("23:59");
       setFile(null);
       await load();
     } catch (err) {
@@ -127,6 +161,111 @@ function ClassDetail() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const openEditClass = () => {
+    if (!cls) return;
+    setClassDraft({
+      title: cls.title,
+      class_code: cls.class_code,
+      grade: cls.grade ?? "",
+      description: cls.description ?? "",
+    });
+    setEditingClass(true);
+  };
+
+  const saveClass = async () => {
+    if (!cls || !user) return;
+    const newCode = classDraft.class_code.trim().toUpperCase();
+    const newTitle = classDraft.title.trim();
+    if (!newCode || !newTitle) return toast.error("Title and class code are required");
+    setSavingClass(true);
+    const { error } = await supabase
+      .from("classes")
+      .update({
+        title: newTitle,
+        class_code: newCode,
+        grade: classDraft.grade.trim() || null,
+        description: classDraft.description.trim() || null,
+      })
+      .eq("id", cls.id)
+      .eq("teacher_id", user.id);
+    setSavingClass(false);
+    if (error) return toast.error(error.message);
+    toast.success("Class updated");
+    setEditingClass(false);
+    if (newCode !== cls.class_code) {
+      navigate({ to: "/teacher/class/$classCode", params: { classCode: newCode } });
+    } else {
+      await load();
+    }
+  };
+
+  const confirmDeleteClass = async () => {
+    if (!cls || !user) return;
+    setDeletingClass(true);
+    const { error } = await supabase
+      .from("classes")
+      .delete()
+      .eq("id", cls.id)
+      .eq("teacher_id", user.id);
+    setDeletingClass(false);
+    setDeleteClassOpen(false);
+    if (error) return toast.error(error.message);
+    toast.success("Class deleted");
+    navigate({ to: "/teacher/dashboard" });
+  };
+
+  const openEditAssignment = (a: Assignment) => {
+    setAsnDraft({ title: a.title, description: a.description ?? "", link_url: a.link_url ?? "" });
+    if (a.due_date) {
+      const d = new Date(a.due_date);
+      setAsnDueDate(d);
+      setAsnDueTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+    } else {
+      setAsnDueDate(undefined);
+      setAsnDueTime("23:59");
+    }
+    setEditingAssignment(a);
+  };
+
+  const saveAssignment = async () => {
+    if (!editingAssignment) return;
+    const title = asnDraft.title.trim();
+    if (!title) return toast.error("Title is required");
+    let dueIso: string | null = null;
+    if (asnDueDate) {
+      const [hh, mm] = (asnDueTime || "23:59").split(":").map((v) => parseInt(v, 10));
+      const d = new Date(asnDueDate);
+      d.setHours(Number.isFinite(hh) ? hh : 23, Number.isFinite(mm) ? mm : 59, 0, 0);
+      dueIso = d.toISOString();
+    }
+    setSavingAsn(true);
+    const { error } = await supabase
+      .from("assignments")
+      .update({
+        title,
+        description: asnDraft.description.trim() || null,
+        link_url: asnDraft.link_url.trim() || null,
+        due_date: dueIso,
+      })
+      .eq("id", editingAssignment.id);
+    setSavingAsn(false);
+    if (error) return toast.error(error.message);
+    toast.success("Assignment updated");
+    setEditingAssignment(null);
+    await load();
+  };
+
+  const confirmDeleteAssignment = async () => {
+    if (!pendingDeleteAsn) return;
+    setDeletingAsn(true);
+    const { error } = await supabase.from("assignments").delete().eq("id", pendingDeleteAsn.id);
+    setDeletingAsn(false);
+    setPendingDeleteAsn(null);
+    if (error) return toast.error(error.message);
+    toast.success("Assignment deleted");
+    await load();
   };
 
   if (!profile) return null;
@@ -146,15 +285,33 @@ function ClassDetail() {
           </div>
         ) : (
           <>
-            <div className="mb-8">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--color-parchment)] px-3 py-1 font-mono text-xs text-foreground">
-                {cls.class_code}
+            <div className="mb-8 flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--color-parchment)] px-3 py-1 font-mono text-xs text-foreground">
+                  {cls.class_code}
+                </div>
+                <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
+                  {cls.title}
+                </h1>
+                {cls.grade && <p className="mt-1 text-sm text-muted-foreground">{cls.grade}</p>}
+                {cls.description && <p className="mt-2 text-muted-foreground">{cls.description}</p>}
               </div>
-              <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
-                {cls.title}
-              </h1>
-              {cls.grade && <p className="mt-1 text-sm text-muted-foreground">{cls.grade}</p>}
-              {cls.description && <p className="mt-2 text-muted-foreground">{cls.description}</p>}
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={openEditClass}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-[var(--color-ember)]/60"
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteClassOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-destructive/60 hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </button>
+              </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
@@ -222,12 +379,47 @@ function ClassDetail() {
                   <label className="block text-xs uppercase tracking-wider text-muted-foreground">
                     Due date
                   </label>
-                  <input
-                    type="datetime-local"
-                    value={form.due_date}
-                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                  />
+                  <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex-1 inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-left text-sm",
+                            !dueDate && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="h-4 w-4" />
+                          {dueDate ? format(dueDate, "PPP") : "Pick a date"}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dueDate}
+                          onSelect={setDueDate}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <input
+                      type="time"
+                      value={dueTime}
+                      onChange={(e) => setDueTime(e.target.value)}
+                      className="w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    />
+                    {dueDate && (
+                      <button
+                        type="button"
+                        onClick={() => setDueDate(undefined)}
+                        className="rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+                        title="Clear due date"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     placeholder="Attach a link (optional) — https://…"
@@ -269,18 +461,38 @@ function ClassDetail() {
                   <ul className="space-y-2">
                     {assignments.map((a) => (
                       <li key={a.id} className="space-y-2">
-                        <Link
-                          to="/teacher/assignment/$assignmentId"
-                          params={{ assignmentId: a.id }}
-                          className="block rounded-lg border border-border bg-background px-3 py-2 text-sm transition hover:border-[var(--color-ember)]/50"
-                        >
-                          <div className="font-medium text-foreground">{a.title}</div>
-                          {a.due_date && (
-                            <div className="text-xs text-muted-foreground">
-                              Due {new Date(a.due_date).toLocaleString()}
-                            </div>
-                          )}
-                        </Link>
+                        <div className="group flex items-start gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition hover:border-[var(--color-ember)]/50">
+                          <Link
+                            to="/teacher/assignment/$assignmentId"
+                            params={{ assignmentId: a.id }}
+                            className="min-w-0 flex-1"
+                          >
+                            <div className="truncate font-medium text-foreground">{a.title}</div>
+                            {a.due_date && (
+                              <div className="text-xs text-muted-foreground">
+                                Due {new Date(a.due_date).toLocaleString()}
+                              </div>
+                            )}
+                          </Link>
+                          <div className="flex shrink-0 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEditAssignment(a)}
+                              title="Edit assignment"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPendingDeleteAsn(a)}
+                              title="Delete assignment"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
                         {a.link_url && <LinkPreview url={a.link_url} title={a.title} />}
                       </li>
                     ))}
@@ -330,6 +542,101 @@ function ClassDetail() {
           </div>
         </div>
       )}
+
+      {/* Edit class dialog */}
+      {editingClass && cls && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !savingClass && setEditingClass(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="font-display text-lg text-foreground">Edit class</div>
+              <button onClick={() => setEditingClass(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <input placeholder="Class title" value={classDraft.title} onChange={(e) => setClassDraft({ ...classDraft, title: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <input placeholder="Class code" value={classDraft.class_code} onChange={(e) => setClassDraft({ ...classDraft, class_code: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase" />
+              <input placeholder="Grade / level (optional)" value={classDraft.grade} onChange={(e) => setClassDraft({ ...classDraft, grade: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <textarea placeholder="Description (optional)" value={classDraft.description} onChange={(e) => setClassDraft({ ...classDraft, description: e.target.value })} rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setEditingClass(false)} disabled={savingClass} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
+                <button onClick={saveClass} disabled={savingClass} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{savingClass ? "Saving…" : "Save"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit assignment dialog */}
+      {editingAssignment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !savingAsn && setEditingAssignment(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="font-display text-lg text-foreground">Edit assignment</div>
+              <button onClick={() => setEditingAssignment(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <input placeholder="Title" value={asnDraft.title} onChange={(e) => setAsnDraft({ ...asnDraft, title: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <textarea placeholder="Instructions (optional)" value={asnDraft.description} onChange={(e) => setAsnDraft({ ...asnDraft, description: e.target.value })} rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground">Due date</label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className={cn("flex-1 inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-left text-sm", !asnDueDate && "text-muted-foreground")}>
+                      <CalendarIcon className="h-4 w-4" />
+                      {asnDueDate ? format(asnDueDate, "PPP") : "Pick a date"}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={asnDueDate} onSelect={setAsnDueDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+                <input type="time" value={asnDueTime} onChange={(e) => setAsnDueTime(e.target.value)} className="w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                {asnDueDate && (
+                  <button type="button" onClick={() => setAsnDueDate(undefined)} className="rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Clear</button>
+                )}
+              </div>
+              <input type="url" placeholder="Attach a link (optional)" value={asnDraft.link_url} onChange={(e) => setAsnDraft({ ...asnDraft, link_url: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setEditingAssignment(null)} disabled={savingAsn} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
+                <button onClick={saveAssignment} disabled={savingAsn} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{savingAsn ? "Saving…" : "Save"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AlertDialog open={deleteClassOpen} onOpenChange={(o) => !o && setDeleteClassOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this class?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the class, its enrollments, assignments and submissions.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingClass}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteClass(); }} disabled={deletingClass} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deletingClass ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingDeleteAsn} onOpenChange={(o) => !o && setPendingDeleteAsn(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteAsn && <>Delete <span className="font-medium text-foreground">"{pendingDeleteAsn.title}"</span>? This also removes all submissions for it.</>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAsn}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteAssignment(); }} disabled={deletingAsn} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deletingAsn ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
