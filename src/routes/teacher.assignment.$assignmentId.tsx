@@ -42,7 +42,6 @@ function AssignmentGrading() {
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [saving, setSaving] = useState<string | null>(null);
-  const [justSaved, setJustSaved] = useState<Record<string, boolean>>({});
 
   const openFile = async (path: string) => {
     const { data, error } = await supabase.storage.from("classroom-files").createSignedUrl(path, 300);
@@ -79,22 +78,54 @@ function AssignmentGrading() {
     load();
   }, [load]);
 
+  const clampPercent = (raw: string): string => {
+    if (raw === "") return "";
+    // Only digits and one optional decimal point
+    const cleaned = raw.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    const normalized = parts.length > 1 ? `${parts[0]}.${parts.slice(1).join("")}` : cleaned;
+    if (normalized === "" || normalized === ".") return normalized;
+    const n = parseFloat(normalized);
+    if (Number.isNaN(n)) return "";
+    if (n < 0) return "0";
+    if (n > 100) return "100";
+    return normalized;
+  };
+
   const saveGrade = async (id: string) => {
     const d = drafts[id];
     if (!d) return;
+    // Normalise grade to a plain number string (percent) or null
+    const gradeTrim = d.grade.trim();
+    let gradeToSave: string | null = null;
+    if (gradeTrim !== "") {
+      const n = parseFloat(gradeTrim);
+      if (Number.isNaN(n) || n < 0 || n > 100) {
+        return toast.error("Grade must be a percentage between 0 and 100");
+      }
+      gradeToSave = String(n);
+    }
     setSaving(id);
     const { error } = await supabase
       .from("submissions")
-      .update({ grade: d.grade || null, feedback: d.feedback || null })
+      .update({ grade: gradeToSave, feedback: d.feedback || null })
       .eq("id", id)
       .select()
       .single();
     setSaving(null);
     if (error) return toast.error(error.message);
     toast.success("Remarks saved");
-    setJustSaved((prev) => ({ ...prev, [id]: true }));
-    setSubs((prev) => prev.map((x) => (x.id === id ? { ...x, grade: d.grade || null, feedback: d.feedback || null } : x)));
-    setTimeout(() => setJustSaved((prev) => ({ ...prev, [id]: false })), 2500);
+    setSubs((prev) => prev.map((x) => (x.id === id ? { ...x, grade: gradeToSave, feedback: d.feedback || null } : x)));
+    setDrafts((prev) => ({ ...prev, [id]: { grade: gradeToSave ?? "", feedback: d.feedback ?? "" } }));
+  };
+
+  const isSaved = (s: Submission): boolean => {
+    const d = drafts[s.id];
+    if (!d) return false;
+    const savedGrade = s.grade ?? "";
+    const savedFeedback = s.feedback ?? "";
+    const hasAny = savedGrade !== "" || savedFeedback !== "";
+    return hasAny && d.grade === savedGrade && d.feedback === savedFeedback;
   };
 
   if (!profile) return null;
