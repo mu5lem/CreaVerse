@@ -83,6 +83,13 @@ function ClassDetail() {
   const [savingAsn, setSavingAsn] = useState(false);
   const [pendingDeleteAsn, setPendingDeleteAsn] = useState<Assignment | null>(null);
   const [deletingAsn, setDeletingAsn] = useState(false);
+  const [asnKind, setAsnKind] = useState<"plain" | "quiz">("plain");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [editAsnKind, setEditAsnKind] = useState<"plain" | "quiz">("plain");
+  const [editQuestions, setEditQuestions] = useState<Question[]>([]);
+  const [reportStudent, setReportStudent] = useState<StudentRow | null>(null);
+  const [requests, setRequests] = useState<EnrollmentRequest[]>([]);
+  const [suspendedMap, setSuspendedMap] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
 
   const load = useCallback(async () => {
