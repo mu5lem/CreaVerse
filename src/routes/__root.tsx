@@ -195,6 +195,7 @@ function RootComponent() {
       <AuthProvider>
         <ConfirmProvider>
           <OfflineBanner />
+          <OnboardingGate />
           <div className="animate-fade-up transition-all duration-300 ease-out">
             <Outlet />
           </div>
