@@ -546,6 +546,31 @@ function StudentClass() {
           </>
         )}
       </main>
+      {leaveOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !submittingLeave && setLeaveOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <div className="mb-3 font-display text-lg text-foreground">
+              {enrollment?.suspended ? "Request reactivation" : "Request to leave this class"}
+            </div>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Your teacher will review and approve or deny this request.
+            </p>
+            <textarea
+              value={leaveReason}
+              onChange={(e) => setLeaveReason(e.target.value)}
+              rows={3}
+              placeholder="Reason (optional)"
+              className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <button onClick={() => setLeaveOpen(false)} disabled={submittingLeave} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
+              <button onClick={submitLeaveRequest} disabled={submittingLeave} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
+                {submittingLeave ? "Sending…" : "Send request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
