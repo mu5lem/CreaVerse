@@ -1,0 +1,1 @@
+ALTER TABLE public.onboarding_responses ADD COLUMN IF NOT EXISTS age_group text; CREATE UNIQUE INDEX IF NOT EXISTS onboarding_responses_user_unique ON public.onboarding_responses(user_id); GRANT SELECT, INSERT ON public.onboarding_responses TO authenticated; GRANT ALL ON public.onboarding_responses TO service_role;
