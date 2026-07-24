@@ -462,6 +462,10 @@ function ClassDetail() {
                   <h2 className="font-display text-lg text-foreground">New assignment</h2>
                 </div>
                 <div className="space-y-3">
+                  <div className="inline-flex rounded-full border border-border bg-background p-1 text-xs">
+                    <button type="button" onClick={() => setAsnKind("plain")} className={cn("rounded-full px-3 py-1 font-medium", asnKind === "plain" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Text / File</button>
+                    <button type="button" onClick={() => setAsnKind("quiz")} className={cn("rounded-full px-3 py-1 font-medium", asnKind === "quiz" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Quiz</button>
+                  </div>
                   <input
                     required
                     placeholder="Title"
