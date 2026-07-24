@@ -16,6 +16,8 @@ import { AuthProvider } from "../hooks/useAuth";
 import { brand } from "../lib/brand";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { ConfirmProvider } from "../components/ConfirmDialog";
+import { OnboardingGate } from "../components/OnboardingGate";
+
 
 function NotFoundComponent() {
   return (
