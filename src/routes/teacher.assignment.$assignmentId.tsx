@@ -196,15 +196,24 @@ function AssignmentGrading() {
                         Open submission file
                       </button>
                     )}
-                    <div className="grid gap-3 sm:grid-cols-[120px_1fr_auto]">
-                      <input
-                        placeholder="Grade"
-                        value={drafts[s.id]?.grade ?? ""}
-                        onChange={(e) =>
-                          setDrafts({ ...drafts, [s.id]: { ...drafts[s.id], grade: e.target.value } })
-                        }
-                        className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                      />
+                    <div className="grid gap-3 sm:grid-cols-[140px_1fr_auto]">
+                      <div className="relative">
+                        <input
+                          inputMode="decimal"
+                          placeholder="Grade %"
+                          value={drafts[s.id]?.grade ?? ""}
+                          onChange={(e) =>
+                            setDrafts({
+                              ...drafts,
+                              [s.id]: { ...drafts[s.id], grade: clampPercent(e.target.value) },
+                            })
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-7 text-sm"
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          %
+                        </span>
+                      </div>
                       <input
                         placeholder="Feedback"
                         value={drafts[s.id]?.feedback ?? ""}
@@ -213,13 +222,18 @@ function AssignmentGrading() {
                         }
                         className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       />
-                      <button
-                        onClick={() => saveGrade(s.id)}
-                        disabled={saving === s.id}
-                        className={`rounded-full px-5 py-2 text-sm font-medium transition disabled:opacity-60 ${justSaved[s.id] ? "bg-emerald-600 text-white" : "bg-primary text-primary-foreground hover:opacity-90"}`}
-                      >
-                        {saving === s.id ? "Saving…" : justSaved[s.id] ? "Saved ✓" : "Save"}
-                      </button>
+                      {(() => {
+                        const saved = isSaved(s);
+                        return (
+                          <button
+                            onClick={() => saveGrade(s.id)}
+                            disabled={saving === s.id}
+                            className={`rounded-full px-5 py-2 text-sm font-medium transition disabled:opacity-60 ${saved ? "bg-emerald-600 text-white hover:bg-emerald-600/90" : "bg-primary text-primary-foreground hover:opacity-90"}`}
+                          >
+                            {saving === s.id ? "Saving…" : saved ? "Saved ✓" : "Save"}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}
