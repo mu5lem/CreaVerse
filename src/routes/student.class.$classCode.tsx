@@ -214,6 +214,57 @@ function StudentClass() {
     await load();
   };
 
+  const submitQuiz = async (a: Assignment) => {
+    if (!user || submitting) return;
+    const answers = quizDrafts[a.id] ?? {};
+    const qs = a.questions ?? [];
+    if (qs.length === 0) return toast.error("Quiz has no questions");
+    setSubmitting(a.id);
+    try {
+      const { earned, possible } = autoScore(qs, answers);
+      const percent = possible > 0 ? Math.round((earned / possible) * 1000) / 10 : null;
+      const { error } = await supabase.from("submissions").upsert(
+        {
+          assignment_id: a.id,
+          student_id: user.id,
+          notes: null,
+          file_url: null,
+          answers: JSON.parse(JSON.stringify(answers)),
+          obtained_marks: earned,
+          grade: percent !== null ? String(percent) : null,
+          submitted_at: new Date().toISOString(),
+        },
+        { onConflict: "assignment_id,student_id" },
+      );
+      if (error) throw error;
+      toast.success("Quiz submitted");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit");
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const submitLeaveRequest = async () => {
+    if (!user || submittingLeave) return;
+    setSubmittingLeave(true);
+    const kind: "leave" | "reactivate" = enrollment?.suspended ? "reactivate" : "leave";
+    const { error } = await supabase.from("enrollment_requests").insert({
+      class_code: classCode,
+      student_id: user.id,
+      kind,
+      reason: leaveReason.trim() || null,
+      status: "pending",
+    });
+    setSubmittingLeave(false);
+    if (error) return toast.error(error.message);
+    toast.success("Request sent to your teacher");
+    setLeaveOpen(false);
+    setLeaveReason("");
+    await load();
+  };
+
   if (!profile) return null;
 
   return (
