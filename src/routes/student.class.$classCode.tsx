@@ -364,7 +364,55 @@ function StudentClass() {
                         </div>
                       )}
 
-                      {sub ? (
+                      {a.assignment_kind === "quiz" ? (
+                        (() => {
+                          const qs = a.questions ?? [];
+                          const savedAnswers = (sub?.answers ?? {}) as AnswerMap;
+                          const answers = quizDrafts[a.id] ?? savedAnswers;
+                          const total = totalPoints(qs);
+                          return (
+                            <div className="mt-4 rounded-lg border border-border bg-background p-3">
+                              <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Quiz — {qs.length} question{qs.length === 1 ? "" : "s"}</span>
+                                <span>{total} pts total</span>
+                              </div>
+                              <QuizTaker
+                                questions={qs}
+                                answers={answers}
+                                onChange={(next) => setQuizDrafts({ ...quizDrafts, [a.id]: next })}
+                                readOnly={!!sub}
+                              />
+                              {sub ? (
+                                <div className="mt-3 border-t border-border pt-3">
+                                  <p className="text-sm">
+                                    <span className="text-muted-foreground">Auto-score:</span>{" "}
+                                    <span className="font-medium text-foreground">
+                                      {sub.obtained_marks ?? 0} / {total}
+                                    </span>
+                                    {sub.grade && (
+                                      <span className="ml-2 text-muted-foreground">({sub.grade}%)</span>
+                                    )}
+                                  </p>
+                                  {sub.feedback && (
+                                    <p className="mt-1 text-sm text-muted-foreground">{sub.feedback}</p>
+                                  )}
+                                  <p className="mt-2 text-xs text-muted-foreground">
+                                    Submitted {new Date(sub.submitted_at).toLocaleString()}
+                                  </p>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => submitQuiz(a)}
+                                  disabled={submitting === a.id}
+                                  className="mt-3 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                                >
+                                  {submitting === a.id ? "Submitting…" : "Submit quiz"}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()
+                      ) : sub ? (
                         <div className="mt-4 rounded-lg border border-border bg-background p-3">
                           {editingSub[a.id] !== undefined ? (
                             <div className="space-y-2">
