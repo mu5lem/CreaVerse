@@ -266,6 +266,8 @@ function ClassDetail() {
       setAsnDueDate(undefined);
       setAsnDueTime("23:59");
     }
+    setEditAsnKind(a.assignment_kind === "quiz" ? "quiz" : "plain");
+    setEditQuestions(Array.isArray(a.questions) ? (a.questions as Question[]) : []);
     setEditingAssignment(a);
   };
 
@@ -280,20 +282,45 @@ function ClassDetail() {
       d.setHours(Number.isFinite(hh) ? hh : 23, Number.isFinite(mm) ? mm : 59, 0, 0);
       dueIso = d.toISOString();
     }
+    if (editAsnKind === "quiz" && editQuestions.length === 0) return toast.error("Add at least one question");
     setSavingAsn(true);
     const { error } = await supabase
       .from("assignments")
       .update({
         title,
         description: asnDraft.description.trim() || null,
-        link_url: asnDraft.link_url.trim() || null,
+        link_url: editAsnKind === "quiz" ? null : (asnDraft.link_url.trim() || null),
         due_date: dueIso,
+        assignment_kind: editAsnKind,
+        questions: editAsnKind === "quiz" ? JSON.parse(JSON.stringify(editQuestions)) : null,
+        total_marks: editAsnKind === "quiz" ? totalPoints(editQuestions) : null,
       })
       .eq("id", editingAssignment.id);
     setSavingAsn(false);
     if (error) return toast.error(error.message);
     toast.success("Assignment updated");
     setEditingAssignment(null);
+    await load();
+  };
+
+  const decideRequest = async (r: EnrollmentRequest, status: "approved" | "denied") => {
+    if (!user) return;
+    // If leave approved → delete enrollment. If reactivate approved → set suspended=false.
+    if (status === "approved") {
+      if (r.kind === "leave") {
+        const { error } = await supabase.from("enrollments").delete().eq("class_code", r.class_code).eq("student_id", r.student_id);
+        if (error) return toast.error(error.message);
+      } else {
+        const { error } = await supabase.from("enrollments").update({ suspended: false }).eq("class_code", r.class_code).eq("student_id", r.student_id);
+        if (error) return toast.error(error.message);
+      }
+    }
+    const { error: rErr } = await supabase
+      .from("enrollment_requests")
+      .update({ status, decided_by: user.id, decided_at: new Date().toISOString() })
+      .eq("id", r.id);
+    if (rErr) return toast.error(rErr.message);
+    toast.success(status === "approved" ? "Approved" : "Denied");
     await load();
   };
 
