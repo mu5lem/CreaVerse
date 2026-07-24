@@ -296,7 +296,29 @@ function StudentClass() {
               )}
               {cls.grade && <p className="mt-1 text-sm text-muted-foreground">{cls.grade}</p>}
               {cls.description && <p className="mt-2 text-muted-foreground">{cls.description}</p>}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {enrollment?.suspended && (
+                  <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+                    Your teacher has suspended you from this class.
+                  </span>
+                )}
+                {pendingRequest ? (
+                  <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                    {pendingRequest.kind === "leave" ? "Leave request pending teacher approval" : "Reactivation request pending"}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { setLeaveReason(""); setLeaveOpen(true); }}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition hover:border-destructive/60 hover:text-destructive"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    {enrollment?.suspended ? "Request reactivation" : "Request to leave"}
+                  </button>
+                )}
+              </div>
             </div>
+
 
             <h2 className="mb-4 font-display text-2xl text-foreground">Assignments</h2>
             {assignments.length === 0 ? (
