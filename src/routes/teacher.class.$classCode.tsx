@@ -163,20 +163,24 @@ function ClassDetail() {
         if (Number.isNaN(d.getTime())) throw new Error("Invalid due date");
         dueIso = d.toISOString();
       }
+      if (asnKind === "quiz" && questions.length === 0) throw new Error("Add at least one question");
       const { data: created, error } = await supabase
         .from("assignments")
         .insert({
           class_code: classCode,
           title: form.title.trim(),
           description: form.description.trim() || null,
-          link_url: form.link_url.trim() || null,
+          link_url: asnKind === "quiz" ? null : (form.link_url.trim() || null),
           due_date: dueIso,
+          assignment_kind: asnKind,
+          questions: asnKind === "quiz" ? (questions as unknown as object) : null,
+          total_marks: asnKind === "quiz" ? totalPoints(questions) : null,
         })
         .select("*")
         .single();
       if (error) throw error;
 
-      if (file && created) {
+      if (asnKind === "plain" && file && created) {
         const path = `assignments/${classCode}/${created.id}/${file.name}`;
         const { error: upErr } = await supabase.storage
           .from("classroom-files")
@@ -184,11 +188,13 @@ function ClassDetail() {
         if (upErr) throw upErr;
         await supabase.from("assignments").update({ media_url: path }).eq("id", created.id);
       }
-      toast.success("Assignment created");
+      toast.success(asnKind === "quiz" ? "Quiz published" : "Assignment created");
       setForm({ title: "", description: "", link_url: "" });
       setDueDate(undefined);
       setDueTime("23:59");
       setFile(null);
+      setQuestions([]);
+      setAsnKind("plain");
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create");
