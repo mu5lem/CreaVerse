@@ -16,6 +16,8 @@ import { AuthProvider } from "../hooks/useAuth";
 import { brand } from "../lib/brand";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { ConfirmProvider } from "../components/ConfirmDialog";
+import { OnboardingGate } from "../components/OnboardingGate";
+
 
 function NotFoundComponent() {
   return (
@@ -152,12 +154,16 @@ function RootComponent() {
 
   useEffect(() => {
     try {
-      const theme = window.localStorage.getItem("creaverse:theme") ?? "system";
-      const dark = theme === "dark" || (theme === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
-      document.documentElement.classList.toggle("dark", dark);
+      const theme = window.localStorage.getItem("creaverse:theme");
+      // Only apply a theme if the user has explicitly chosen one — otherwise the OnboardingGate will prompt.
+      if (theme) {
+        const dark = theme === "dark" || (theme === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      }
     } catch {
       /* ignore */
     }
+
 
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
     const h = window.location.hostname;
@@ -189,6 +195,7 @@ function RootComponent() {
       <AuthProvider>
         <ConfirmProvider>
           <OfflineBanner />
+          <OnboardingGate />
           <div className="animate-fade-up transition-all duration-300 ease-out">
             <Outlet />
           </div>

@@ -48,8 +48,12 @@ function SettingsPage() {
   const [theme, setTheme] = useState<ThemePref>("system");
   const [language, setLanguage] = useState<LangPref>("en");
   const [prefs, setPrefs] = useState({ assignment: true, submission: true, grade: true });
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPw, setChangingPw] = useState(false);
   const [saving, setSaving] = useState(false);
+
 
   useEffect(() => {
     if (!profile) return;
@@ -91,12 +95,30 @@ function SettingsPage() {
   };
 
   const changePassword = async () => {
-    if (newPassword.length < 6) return toast.error("Password must be at least 6 characters");
+    if (!profile?.email) return toast.error("No account email on file.");
+    if (!currentPassword) return toast.error("Enter your current password.");
+    if (newPassword.length < 6) return toast.error("New password must be at least 6 characters.");
+    if (newPassword !== confirmPassword) return toast.error("New password and confirmation do not match.");
+    if (newPassword === currentPassword) return toast.error("New password must be different from the current one.");
+    setChangingPw(true);
+    // Verify the current password by attempting a fresh sign-in.
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: currentPassword,
+    });
+    if (verifyErr) {
+      setChangingPw(false);
+      return toast.error("Current password is incorrect.");
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPw(false);
     if (error) return toast.error(error.message);
+    setCurrentPassword("");
     setNewPassword("");
+    setConfirmPassword("");
     toast.success("Password changed");
   };
+
 
   const deactivate = async () => {
     const ok = await confirm({
@@ -138,73 +160,91 @@ function SettingsPage() {
       <div className="mx-auto max-w-4xl px-6 py-6"><BackButton to={home} /></div>
       <main className="mx-auto max-w-4xl px-6 pb-16">
         <div className="mb-8">
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">Account settings</h1>
-          <p className="mt-2 text-muted-foreground">Control profile details, security, notifications, language, and theme.</p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">Settings</h1>
+          <p className="mt-2 text-muted-foreground">Grouped into general app preferences and account & security controls.</p>
         </div>
 
-        <div className="grid gap-5">
-          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2"><UserCog className="h-4 w-4 text-muted-foreground" /><h2 className="font-display text-xl text-foreground">Profile</h2></div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="WhatsApp / phone" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            </div>
-          </section>
+        <div className="grid gap-8">
+          <div>
+            <h2 className="mb-3 font-display text-2xl font-semibold text-foreground">General App Settings</h2>
+            <p className="mb-4 text-sm text-muted-foreground">Appearance, language, and notification preferences for the whole app.</p>
+            <div className="grid gap-5">
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-2"><Moon className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Appearance</h3></div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {(["system", "light", "dark"] as ThemePref[]).map((t) => (
+                    <button key={t} type="button" onClick={() => { setTheme(t); applyTheme(t); }} className={`press rounded-full border px-4 py-2 text-sm capitalize transition ${theme === t ? "border-[var(--color-ember)] bg-[var(--color-ember)]/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}>{t}</button>
+                  ))}
+                </div>
+              </section>
 
-          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2"><Moon className="h-4 w-4 text-muted-foreground" /><h2 className="font-display text-xl text-foreground">Appearance</h2></div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {(["system", "light", "dark"] as ThemePref[]).map((t) => (
-                <button key={t} type="button" onClick={() => { setTheme(t); applyTheme(t); }} className={`press rounded-full border px-4 py-2 text-sm capitalize transition ${theme === t ? "border-[var(--color-ember)] bg-[var(--color-ember)]/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}>{t}</button>
-              ))}
-            </div>
-          </section>
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-2"><Languages className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Language</h3></div>
+                <div className="inline-flex rounded-full border border-border bg-background p-1">
+                  <button type="button" onClick={() => setLanguage("en")} className={`rounded-full px-5 py-2 text-sm ${language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>English</button>
+                  <button type="button" onClick={() => setLanguage("ur")} className={`rounded-full px-5 py-2 text-sm ${language === "ur" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>اردو</button>
+                </div>
+              </section>
 
-          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2"><Languages className="h-4 w-4 text-muted-foreground" /><h2 className="font-display text-xl text-foreground">Language</h2></div>
-            <div className="inline-flex rounded-full border border-border bg-background p-1">
-              <button type="button" onClick={() => setLanguage("en")} className={`rounded-full px-5 py-2 text-sm ${language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>English</button>
-              <button type="button" onClick={() => setLanguage("ur")} className={`rounded-full px-5 py-2 text-sm ${language === "ur" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>اردو</button>
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-2"><Bell className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Notifications</h3></div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    ["assignment", "New assignments"],
+                    ["submission", "Student submissions"],
+                    ["grade", "Grades & feedback"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                      <span>{label}</span>
+                      <input type="checkbox" checked={prefs[key as keyof typeof prefs]} onChange={(e) => setPrefs({ ...prefs, [key]: e.target.checked })} />
+                    </label>
+                  ))}
+                </div>
+              </section>
             </div>
-          </section>
+          </div>
 
-          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2"><Bell className="h-4 w-4 text-muted-foreground" /><h2 className="font-display text-xl text-foreground">Notifications</h2></div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {[
-                ["assignment", "New assignments"],
-                ["submission", "Student submissions"],
-                ["grade", "Grades & feedback"],
-              ].map(([key, label]) => (
-                <label key={key} className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                  <span>{label}</span>
-                  <input type="checkbox" checked={prefs[key as keyof typeof prefs]} onChange={(e) => setPrefs({ ...prefs, [key]: e.target.checked })} />
-                </label>
-              ))}
-            </div>
-          </section>
+          <div>
+            <h2 className="mb-3 font-display text-2xl font-semibold text-foreground">Account Settings</h2>
+            <p className="mb-4 text-sm text-muted-foreground">Your profile, sign-in security, and account lifecycle.</p>
+            <div className="grid gap-5">
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-2"><UserCog className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Profile</h3></div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="WhatsApp / phone" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+              </section>
 
-          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2"><KeyRound className="h-4 w-4 text-muted-foreground" /><h2 className="font-display text-xl text-foreground">Change password</h2></div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-              <button type="button" onClick={changePassword} className="press rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground">Update password</button>
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-2"><KeyRound className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Change password</h3></div>
+                <p className="mb-3 text-xs text-muted-foreground">Enter your current password to authorize the change, then set a new one.</p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <input type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                  <input type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                  <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+                <div className="mt-3">
+                  <button type="button" onClick={changePassword} disabled={changingPw} className="press rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{changingPw ? "Updating…" : "Update password"}</button>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-destructive/30 bg-card p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-destructive" /><h3 className="font-display text-xl text-foreground">Danger zone</h3></div>
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" onClick={deactivate} className="press inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2 text-sm font-medium text-destructive"><ShieldAlert className="h-4 w-4" /> Deactivate account</button>
+                  <button type="button" onClick={removePermanently} className="press inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2 text-sm font-medium text-destructive-foreground"><Trash2 className="h-4 w-4" /> Delete forever</button>
+                </div>
+              </section>
             </div>
-          </section>
+          </div>
 
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={saveProfile} disabled={saving} className="press rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60">{saving ? "Saving…" : "Save settings"}</button>
             <Link to={home} className="press rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground">Back to dashboard</Link>
           </div>
-
-          <section className="rounded-2xl border border-destructive/30 bg-card p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-destructive" /><h2 className="font-display text-xl text-foreground">Danger zone</h2></div>
-            <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={deactivate} className="press inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2 text-sm font-medium text-destructive"><ShieldAlert className="h-4 w-4" /> Deactivate account</button>
-              <button type="button" onClick={removePermanently} className="press inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2 text-sm font-medium text-destructive-foreground"><Trash2 className="h-4 w-4" /> Delete forever</button>
-            </div>
-          </section>
         </div>
+
       </main>
     </div>
   );

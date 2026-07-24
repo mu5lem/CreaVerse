@@ -489,6 +489,7 @@ export type Database = {
       onboarding_responses: {
         Row: {
           age: number | null
+          age_group: string | null
           biggest_challenge: string | null
           class_grade: string | null
           created_at: string
@@ -499,6 +500,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          age_group?: string | null
           biggest_challenge?: string | null
           class_grade?: string | null
           created_at?: string
@@ -509,6 +511,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          age_group?: string | null
           biggest_challenge?: string | null
           class_grade?: string | null
           created_at?: string
