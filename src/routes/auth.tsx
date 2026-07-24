@@ -664,62 +664,6 @@ function AuthPage() {
         </div>
       )}
 
-      {/* ============ WhatsApp handshake lock ============ */}
-      {waOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="animate-pop-in w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
-            <div className="mb-4 flex flex-col items-center text-center">
-              <BookLogo size={56} className="text-[var(--color-ink)] animate-pulse" />
-              <h3 className="mt-3 font-display text-xl text-foreground">WhatsApp handshake</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                To prove you actually own <strong>{waPhone}</strong>, send the code below
-                from your WhatsApp — then paste it back here.
-              </p>
-            </div>
-
-            <div className="mb-4 rounded-xl border border-dashed border-[var(--color-ember)]/40 bg-[var(--color-parchment)]/50 p-4 text-center">
-              <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Your handshake code</div>
-              <div className="mt-1 font-display text-3xl font-bold tracking-widest text-foreground">{waCode}</div>
-            </div>
-
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setWaSent(true)}
-              className="press flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#25D366]/30 transition hover:brightness-95"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Verify via WhatsApp
-            </a>
-
-            {waSent && (
-              <div className="mt-5">
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Paste the code you sent
-                </label>
-                <input
-                  value={waConfirmCode}
-                  onChange={(e) => setWaConfirmCode(e.target.value)}
-                  placeholder="CV-XXXX"
-                  className={inputCls}
-                />
-                <button
-                  type="button"
-                  onClick={confirmWaHandshake}
-                  className="press mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
-                >
-                  <ShieldCheck className="h-4 w-4" /> Release lock
-                </button>
-              </div>
-            )}
-
-            <p className="mt-4 text-center text-[10px] text-muted-foreground">
-              This screen is locked. If your number isn't a real WhatsApp number, WhatsApp will refuse to open the chat.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
