@@ -1,0 +1,10 @@
+# CreaVerse
+
+> A Pakistan-first learning universe for students, teachers, and creators — free courses, AI mentorship, VR lessons, and a directory of scholarships and contests.
+
+CreaVerse helps learners from Matric and FSc through university and competitive exams, with a focus on underprivileged regions of Pakistan. It also curates global opportunities.
+
+## Pages
+
+- [Home](/): Overview of CreaVerse and how it helps students and teachers.
+- [About](/about): Mission, motto, and the story behind CreaVerse.

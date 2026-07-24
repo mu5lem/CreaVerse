@@ -1,0 +1,1 @@
+ALTER TABLE public.onboarding_responses ADD COLUMN IF NOT EXISTS age integer CHECK (age IS NULL OR (age >= 5 AND age <= 99));
