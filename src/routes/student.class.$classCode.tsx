@@ -72,17 +72,6 @@ function StudentClass() {
   const [submittingLeave, setSubmittingLeave] = useState(false);
   const confirm = useConfirm();
 
-function StudentClass() {
-  const { classCode } = Route.useParams();
-  const { profile, signOut, user } = useAuth();
-  const [cls, setCls] = useState<ClassRow | null>(null);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [submissions, setSubmissions] = useState<Record<string, Submission>>({});
-  const [loading, setLoading] = useState(true);
-  const [drafts, setDrafts] = useState<Record<string, { notes: string; file: File | null }>>({});
-  const [submitting, setSubmitting] = useState<string | null>(null);
-  const [editingSub, setEditingSub] = useState<Record<string, string>>({});
-  const confirm = useConfirm();
 
   const load = useCallback(async () => {
     if (!user) return;
