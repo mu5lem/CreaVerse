@@ -174,3 +174,30 @@
 .press:active {
   transform: scale(0.95);
 }
+
+/* Smooth, cheap default transitions across interactive elements — GPU-friendly properties only. */
+button, a, [role="button"], summary {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease,
+              opacity 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+@keyframes cv-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@utility animate-fade-in {
+  animation: cv-fade-in 200ms ease-out both;
+}
+
+/* Respect the OS "reduce motion" setting — disable transforms/animations to keep low-end devices smooth. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
