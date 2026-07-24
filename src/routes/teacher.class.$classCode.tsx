@@ -706,7 +706,21 @@ function ClassDetail() {
                   <button type="button" onClick={() => setAsnDueDate(undefined)} className="rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Clear</button>
                 )}
               </div>
-              <input type="url" placeholder="Attach a link (optional)" value={asnDraft.link_url} onChange={(e) => setAsnDraft({ ...asnDraft, link_url: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <div className="inline-flex rounded-full border border-border bg-background p-1 text-xs">
+                <button type="button" onClick={() => setEditAsnKind("plain")} className={cn("rounded-full px-3 py-1 font-medium", editAsnKind === "plain" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Text / File</button>
+                <button type="button" onClick={() => setEditAsnKind("quiz")} className={cn("rounded-full px-3 py-1 font-medium", editAsnKind === "quiz" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Quiz</button>
+              </div>
+              {editAsnKind === "plain" ? (
+                <input type="url" placeholder="Attach a link (optional)" value={asnDraft.link_url} onChange={(e) => setAsnDraft({ ...asnDraft, link_url: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              ) : (
+                <div className="max-h-[50vh] overflow-y-auto rounded-lg border border-border bg-background p-3">
+                  <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Quiz questions</span>
+                    <span>Total: {totalPoints(editQuestions)} pts</span>
+                  </div>
+                  <QuizBuilder value={editQuestions} onChange={setEditQuestions} />
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-1">
                 <button onClick={() => setEditingAssignment(null)} disabled={savingAsn} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
                 <button onClick={saveAssignment} disabled={savingAsn} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{savingAsn ? "Saving…" : "Save"}</button>
