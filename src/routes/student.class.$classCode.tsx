@@ -76,10 +76,12 @@ function StudentClass() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data: c }, { data: asn }, { data: subs }] = await Promise.all([
+    const [{ data: c }, { data: asn }, { data: subs }, { data: enr }, { data: reqs }] = await Promise.all([
       supabase.from("classes").select("*").eq("class_code", classCode).maybeSingle(),
       supabase.from("assignments").select("*").eq("class_code", classCode).order("created_at", { ascending: false }).limit(100),
       supabase.from("submissions").select("*").eq("student_id", user.id).limit(200),
+      supabase.from("enrollments").select("suspended").eq("class_code", classCode).eq("student_id", user.id).maybeSingle(),
+      supabase.from("enrollment_requests").select("kind").eq("class_code", classCode).eq("student_id", user.id).eq("status", "pending").limit(1),
     ]);
     let classRow = (c as ClassRow | null) ?? null;
     if (classRow?.teacher_id) {
@@ -95,6 +97,9 @@ function StudentClass() {
     const map: Record<string, Submission> = {};
     ((subs ?? []) as Submission[]).forEach((s) => (map[s.assignment_id] = s));
     setSubmissions(map);
+    setEnrollment(enr ? { suspended: !!(enr as { suspended: boolean }).suspended } : null);
+    const first = (reqs ?? [])[0] as { kind: "leave" | "reactivate" } | undefined;
+    setPendingRequest(first ? { kind: first.kind } : null);
     setLoading(false);
   }, [user, classCode]);
 
