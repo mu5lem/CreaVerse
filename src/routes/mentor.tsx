@@ -8,13 +8,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { SUBJECTS, type Subject, type Lang } from "@/lib/mentor-data";
 import { askMentor } from "@/lib/mentor.functions";
 import { generateQuiz, type QuizQuestion } from "@/lib/quiz.functions";
-import { Send, Bot, User as UserIcon, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Send, Bot, User as UserIcon, Sparkles, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+
 import { useDraft } from "@/hooks/useDraft";
 
 type Level = "school" | "college" | "university";
