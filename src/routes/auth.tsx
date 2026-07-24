@@ -253,8 +253,7 @@ function AuthPage() {
     }
     setSubmitting(true);
     try {
-      if (method === "email") await handleEmail();
-      else await handlePhone();
+      await handleEmail();
     } catch (err) {
       if (!(err instanceof Error) || err.message !== "invalid-phone") {
         toast.error(err instanceof Error ? err.message : "Authentication failed");
