@@ -1,0 +1,1 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mentor_messages TO authenticated; GRANT ALL ON public.mentor_messages TO service_role; CREATE INDEX IF NOT EXISTS mentor_messages_user_subject_idx ON public.mentor_messages (user_id, subject, created_at);

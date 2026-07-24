@@ -8,13 +8,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { SUBJECTS, type Subject, type Lang } from "@/lib/mentor-data";
 import { askMentor } from "@/lib/mentor.functions";
 import { generateQuiz, type QuizQuestion } from "@/lib/quiz.functions";
-import { Send, Bot, User as UserIcon, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Send, Bot, User as UserIcon, Sparkles, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+
 import { useDraft } from "@/hooks/useDraft";
 
 type Level = "school" | "college" | "university";
@@ -75,20 +77,72 @@ function MentorPage() {
 }
 
 function MentorChat() {
+  const { user } = useAuth();
   const [subject, setSubject] = useState<Subject>("Math");
   const [lang, setLang] = useState<Lang>("en");
   const [level, setLevel] = useState<Level>("school");
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "assistant", text: "Hi! I'm your AI Mentor. Pick a subject, level, and language — then ask me anything." },
-  ]);
+  const greeting: Msg = { role: "assistant", text: "Hi! I'm your AI Mentor. Pick a subject, level, and language — then ask me anything." };
+  const [msgs, setMsgs] = useState<Msg[]>([greeting]);
   const [input, setInput, clearInput] = useDraft("draft:mentor:input");
   const [busy, setBusy] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
   const ask = useServerFn(askMentor);
+
+  // Load saved history for this user + subject whenever subject changes.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setLoadingHistory(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from("mentor_messages")
+        .select("role, content, created_at")
+        .eq("user_id", user.id)
+        .eq("subject", subject)
+        .order("created_at", { ascending: true })
+        .limit(200);
+      if (cancelled) return;
+      if (error) {
+        console.error("load mentor history", error);
+        setMsgs([greeting]);
+      } else if (data && data.length > 0) {
+        setMsgs(
+          data.map((r) => ({
+            role: r.role === "user" ? "user" : "assistant",
+            text: r.content,
+          }))
+        );
+      } else {
+        setMsgs([greeting]);
+      }
+      setLoadingHistory(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, subject]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [msgs]);
+
+  const clearHistory = async () => {
+    if (!user) return;
+    if (!confirm("Clear all saved chats for this subject? This cannot be undone.")) return;
+    const { error } = await supabase
+      .from("mentor_messages")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("subject", subject);
+    if (error) {
+      toast.error("Failed to clear history.");
+      return;
+    }
+    setMsgs([greeting]);
+    toast.success("History cleared.");
+  };
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,15 +153,33 @@ function MentorChat() {
     const nextMsgs: Msg[] = [...msgs, { role: "user", text }];
     setMsgs(nextMsgs);
 
+    // Persist the user message immediately (fire-and-forget).
+    if (user) {
+      supabase
+        .from("mentor_messages")
+        .insert({ user_id: user.id, subject, role: "user", content: text })
+        .then(({ error }) => {
+          if (error) console.error("save user msg", error);
+        });
+    }
+
     try {
       const history = nextMsgs
-        .slice(-10, -1) // last few turns before current user msg
+        .slice(-20, -1) // send more turns so the mentor remembers the conversation
         .map((m) => ({ role: m.role, content: m.text }));
       const res = await ask({
         data: { subject, lang, level, history, message: text },
       });
       if (res.ok) {
         setMsgs((m) => [...m, { role: "assistant", text: res.reply }]);
+        if (user) {
+          supabase
+            .from("mentor_messages")
+            .insert({ user_id: user.id, subject, role: "assistant", content: res.reply })
+            .then(({ error }) => {
+              if (error) console.error("save assistant msg", error);
+            });
+        }
       } else {
         toast.error(res.error);
         setMsgs((m) => [...m, { role: "assistant", text: `⚠️ ${res.error}` }]);
@@ -119,6 +191,7 @@ function MentorChat() {
       setBusy(false);
     }
   };
+
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm">
@@ -142,6 +215,19 @@ function MentorChat() {
         <div className="inline-flex rounded-full border border-border bg-background p-0.5 text-xs">
           <button onClick={() => setLang("en")} className={`rounded-full px-3 py-1 ${lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
           <button onClick={() => setLang("ur")} className={`rounded-full px-3 py-1 ${lang === "ur" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>اردو</button>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {loadingHistory && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Loading history…</span>
+          )}
+          <button
+            type="button"
+            onClick={clearHistory}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+            title="Clear saved chats for this subject"
+          >
+            <Trash2 className="h-3 w-3" /> Clear history
+          </button>
         </div>
       </div>
       <div ref={scroller} className="h-96 space-y-4 overflow-y-auto p-6">

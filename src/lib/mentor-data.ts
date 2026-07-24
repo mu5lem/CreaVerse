@@ -1,8 +1,9 @@
-export type Subject = "Math" | "Science" | "Physics" | "Chemistry" | "CS" | "English";
+export type Subject = "Math" | "Science" | "Physics" | "Chemistry" | "CS" | "English" | "Career Counseling";
 export type Lang = "en" | "ur";
-export const SUBJECTS: Subject[] = ["Math", "Science", "Physics", "Chemistry", "CS", "English"];
+export const SUBJECTS: Subject[] = ["Math", "Science", "Physics", "Chemistry", "CS", "English", "Career Counseling"];
 
 type ResponseMap = Record<Subject, Record<Lang, { keywords: string[]; reply: string }[]>>;
+
 
 export const mentorResponses: ResponseMap = {
   Math: {
@@ -65,6 +66,15 @@ export const mentorResponses: ResponseMap = {
       { keywords: ["مضمون", "لکھنا"], reply: "ترتیب: تعارف → دلائل (ہر پیراگراف ایک نقطہ) → نتیجہ۔" },
     ],
   },
+  "Career Counseling": {
+    en: [
+      { keywords: ["career", "field", "future"], reply: "Tell me a bit about what you enjoy, what subjects feel easy, and what kind of life you'd like — I'll help you map that to fields that fit." },
+    ],
+    ur: [
+      { keywords: ["کیریئر", "شعبہ"], reply: "مجھے بتائیں آپ کو کیا پسند ہے اور کون سا مضمون آسان لگتا ہے — میں آپ کو موزوں شعبے تجویز کروں گا۔" },
+    ],
+  },
+
 };
 
 export function mentorReply(subject: Subject, lang: Lang, text: string): string {
@@ -162,4 +172,16 @@ export const quizBank: Record<Subject, Record<Difficulty, QuizQ[]>> = {
       { q: "A metaphor is…", options: ["a direct comparison", "a comparison using like/as", "an exaggeration", "a sound word"], answer: 0 },
     ],
   },
+  "Career Counseling": {
+    easy: [
+      { q: "Which of these is a STEM field?", options: ["Engineering", "Painting", "Poetry", "Cooking"], answer: 0 },
+    ],
+    medium: [
+      { q: "MDCAT in Pakistan is typically required for admission to…", options: ["Engineering", "Medical colleges", "Law schools", "Business schools"], answer: 1 },
+    ],
+    hard: [
+      { q: "A person who enjoys building things, solving physics problems, and CAD software is best suited for…", options: ["Journalism", "Mechanical Engineering", "Marketing", "Fine Arts"], answer: 1 },
+    ],
+  },
 };
+
