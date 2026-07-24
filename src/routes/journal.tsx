@@ -110,17 +110,30 @@ function JournalPage() {
     e.preventDefault();
     if (!user || !content.trim() || saving) return;
     setSaving(true);
-    const { error } = await supabase.from("journal_entries").insert({
-      user_id: user.id,
-      mood,
-      content: content.trim(),
-      self_assessment: assessment,
-    } as never);
+    const trimmed = content.trim();
+    const capturedMood = mood;
+    const capturedAssessment = assessment;
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .insert({
+        user_id: user.id,
+        mood: capturedMood,
+        content: trimmed,
+        self_assessment: capturedAssessment,
+      } as never)
+      .select()
+      .single();
     setSaving(false);
     if (error) return toast.error(error.message);
+    // Optimistically prepend the just-saved entry so it shows immediately without waiting for realtime.
+    if (data) {
+      const row = data as Entry;
+      setEntries((prev) => (prev.some((e) => e.id === row.id) ? prev : [row, ...prev]));
+    }
     toast.success("Entry saved");
     clearContent();
   };
+
 
   const confirm = useConfirm();
 
