@@ -53,7 +53,9 @@ function ClassDetail() {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ title: "", description: "", due_date: "", link_url: "" });
+  const [form, setForm] = useState({ title: "", description: "", link_url: "" });
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [dueTime, setDueTime] = useState<string>("23:59");
   const [file, setFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [dmStudent, setDmStudent] = useState<StudentRow | null>(null);
