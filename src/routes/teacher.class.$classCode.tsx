@@ -542,6 +542,101 @@ function ClassDetail() {
           </div>
         </div>
       )}
+
+      {/* Edit class dialog */}
+      {editingClass && cls && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !savingClass && setEditingClass(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="font-display text-lg text-foreground">Edit class</div>
+              <button onClick={() => setEditingClass(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <input placeholder="Class title" value={classDraft.title} onChange={(e) => setClassDraft({ ...classDraft, title: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <input placeholder="Class code" value={classDraft.class_code} onChange={(e) => setClassDraft({ ...classDraft, class_code: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase" />
+              <input placeholder="Grade / level (optional)" value={classDraft.grade} onChange={(e) => setClassDraft({ ...classDraft, grade: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <textarea placeholder="Description (optional)" value={classDraft.description} onChange={(e) => setClassDraft({ ...classDraft, description: e.target.value })} rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setEditingClass(false)} disabled={savingClass} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
+                <button onClick={saveClass} disabled={savingClass} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{savingClass ? "Saving…" : "Save"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit assignment dialog */}
+      {editingAssignment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !savingAsn && setEditingAssignment(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="font-display text-lg text-foreground">Edit assignment</div>
+              <button onClick={() => setEditingAssignment(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <input placeholder="Title" value={asnDraft.title} onChange={(e) => setAsnDraft({ ...asnDraft, title: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <textarea placeholder="Instructions (optional)" value={asnDraft.description} onChange={(e) => setAsnDraft({ ...asnDraft, description: e.target.value })} rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground">Due date</label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className={cn("flex-1 inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-left text-sm", !asnDueDate && "text-muted-foreground")}>
+                      <CalendarIcon className="h-4 w-4" />
+                      {asnDueDate ? format(asnDueDate, "PPP") : "Pick a date"}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={asnDueDate} onSelect={setAsnDueDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+                <input type="time" value={asnDueTime} onChange={(e) => setAsnDueTime(e.target.value)} className="w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                {asnDueDate && (
+                  <button type="button" onClick={() => setAsnDueDate(undefined)} className="rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Clear</button>
+                )}
+              </div>
+              <input type="url" placeholder="Attach a link (optional)" value={asnDraft.link_url} onChange={(e) => setAsnDraft({ ...asnDraft, link_url: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setEditingAssignment(null)} disabled={savingAsn} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
+                <button onClick={saveAssignment} disabled={savingAsn} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{savingAsn ? "Saving…" : "Save"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AlertDialog open={deleteClassOpen} onOpenChange={(o) => !o && setDeleteClassOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this class?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the class, its enrollments, assignments and submissions.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingClass}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteClass(); }} disabled={deletingClass} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deletingClass ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingDeleteAsn} onOpenChange={(o) => !o && setPendingDeleteAsn(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteAsn && <>Delete <span className="font-medium text-foreground">"{pendingDeleteAsn.title}"</span>? This also removes all submissions for it.</>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAsn}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteAssignment(); }} disabled={deletingAsn} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deletingAsn ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
