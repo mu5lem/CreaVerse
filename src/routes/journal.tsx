@@ -152,24 +152,31 @@ function JournalPage() {
       .eq("id", id)
       .eq("user_id", user.id);
     if (error) return toast.error(error.message);
+    // Optimistic local update — avoids a full reload round-trip.
+    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, content: trimmed } : e)));
     toast.success("Updated");
     setEditingId(null);
-    await load();
   };
 
   const deleteEntry = async (id: string) => {
     if (!user) return;
     const ok = await confirm({ title: "Delete this journal entry?", confirmText: "Delete", destructive: true });
     if (!ok) return;
+    // Optimistic removal.
+    const snapshot = entries;
+    setEntries((prev) => prev.filter((e) => e.id !== id));
     const { error } = await supabase
       .from("journal_entries")
       .delete()
       .eq("id", id)
       .eq("user_id", user.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setEntries(snapshot);
+      return toast.error(error.message);
+    }
     toast.success("Deleted");
-    await load();
   };
+
 
   if (!profile) return null;
 
