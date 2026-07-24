@@ -398,15 +398,21 @@ function ClassDetail() {
                       const displayName = s.full_name?.trim() || s.email || s.student_id;
                       return (
                         <li key={s.student_id} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--color-parchment)]/50 px-3 py-2">
-                          <div className="min-w-0">
-                            <div className="truncate font-medium text-foreground">{displayName}</div>
+                          <button
+                            type="button"
+                            onClick={() => setReportStudent(s)}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <div className="truncate font-medium text-foreground hover:text-[var(--color-ember)]">
+                              {displayName}{s.suspended && <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive">suspended</span>}
+                            </div>
                             {s.full_name && s.email && (
                               <div className="truncate text-xs text-muted-foreground">{s.email}</div>
                             )}
                             <div className="text-[10px] text-muted-foreground">
                               Joined {new Date(s.enrolled_at).toLocaleDateString()}
                             </div>
-                          </div>
+                          </button>
                           <button
                             type="button"
                             onClick={() => setDmStudent(s)}
@@ -418,6 +424,36 @@ function ClassDetail() {
                         </li>
                       );
                     })}
+                  </ul>
+                )}
+              </section>
+
+              {/* Enrollment requests */}
+              {requests.length > 0 && (
+                <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <h2 className="mb-3 font-display text-lg text-foreground">Pending student requests</h2>
+                  <ul className="space-y-2 text-sm">
+                    {requests.map((r) => (
+                      <li key={r.id} className="rounded-lg border border-border bg-background p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-medium text-foreground">
+                              {r.student_name || r.student_email || r.student_id} —{" "}
+                              <span className="text-[var(--color-ember)]">{r.kind === "leave" ? "Requesting to leave" : "Requesting reactivation"}</span>
+                            </div>
+                            {r.reason && <div className="mt-1 text-xs text-muted-foreground">Reason: {r.reason}</div>}
+                            <div className="mt-1 text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</div>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button onClick={() => decideRequest(r, "approved")} className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">Approve</button>
+                            <button onClick={() => decideRequest(r, "denied")} className="rounded-full border border-border px-3 py-1 text-xs font-medium hover:border-destructive hover:text-destructive">Deny</button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
                   </ul>
                 )}
               </section>
