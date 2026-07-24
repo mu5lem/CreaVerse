@@ -69,8 +69,6 @@ interface EnrollmentRequest {
   student_email?: string | null;
   student_name?: string | null;
 }
-  full_name: string | null;
-}
 
 function ClassDetail() {
   const { classCode } = Route.useParams();
