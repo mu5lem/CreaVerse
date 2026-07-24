@@ -1,8 +1,9 @@
-export type Subject = "Math" | "Science" | "Physics" | "Chemistry" | "CS" | "English";
+export type Subject = "Math" | "Science" | "Physics" | "Chemistry" | "CS" | "English" | "Career Counseling";
 export type Lang = "en" | "ur";
-export const SUBJECTS: Subject[] = ["Math", "Science", "Physics", "Chemistry", "CS", "English"];
+export const SUBJECTS: Subject[] = ["Math", "Science", "Physics", "Chemistry", "CS", "English", "Career Counseling"];
 
 type ResponseMap = Record<Subject, Record<Lang, { keywords: string[]; reply: string }[]>>;
+
 
 export const mentorResponses: ResponseMap = {
   Math: {
