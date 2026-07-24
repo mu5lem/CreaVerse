@@ -56,6 +56,20 @@ interface StudentRow {
   enrolled_at: string;
   email: string | null;
   full_name: string | null;
+  suspended?: boolean;
+}
+interface EnrollmentRequest {
+  id: string;
+  class_code: string;
+  student_id: string;
+  kind: "leave" | "reactivate";
+  reason: string | null;
+  status: "pending" | "approved" | "denied";
+  created_at: string;
+  student_email?: string | null;
+  student_name?: string | null;
+}
+  full_name: string | null;
 }
 
 function ClassDetail() {
