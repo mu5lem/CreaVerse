@@ -214,6 +214,8 @@ function AdminDashboard() {
 
         <TeacherActivitySection />
 
+        <OnboardingResponsesSection />
+
 
 
 
