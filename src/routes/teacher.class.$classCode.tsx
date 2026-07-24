@@ -43,6 +43,9 @@ interface Assignment {
   link_url: string | null;
   due_date: string | null;
   created_at: string;
+  assignment_kind: string;
+  questions: Question[] | null;
+  total_marks: number | null;
 }
 interface StudentRow {
   student_id: string;
