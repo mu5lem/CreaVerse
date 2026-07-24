@@ -461,18 +461,38 @@ function ClassDetail() {
                   <ul className="space-y-2">
                     {assignments.map((a) => (
                       <li key={a.id} className="space-y-2">
-                        <Link
-                          to="/teacher/assignment/$assignmentId"
-                          params={{ assignmentId: a.id }}
-                          className="block rounded-lg border border-border bg-background px-3 py-2 text-sm transition hover:border-[var(--color-ember)]/50"
-                        >
-                          <div className="font-medium text-foreground">{a.title}</div>
-                          {a.due_date && (
-                            <div className="text-xs text-muted-foreground">
-                              Due {new Date(a.due_date).toLocaleString()}
-                            </div>
-                          )}
-                        </Link>
+                        <div className="group flex items-start gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition hover:border-[var(--color-ember)]/50">
+                          <Link
+                            to="/teacher/assignment/$assignmentId"
+                            params={{ assignmentId: a.id }}
+                            className="min-w-0 flex-1"
+                          >
+                            <div className="truncate font-medium text-foreground">{a.title}</div>
+                            {a.due_date && (
+                              <div className="text-xs text-muted-foreground">
+                                Due {new Date(a.due_date).toLocaleString()}
+                              </div>
+                            )}
+                          </Link>
+                          <div className="flex shrink-0 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEditAssignment(a)}
+                              title="Edit assignment"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPendingDeleteAsn(a)}
+                              title="Delete assignment"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
                         {a.link_url && <LinkPreview url={a.link_url} title={a.title} />}
                       </li>
                     ))}
