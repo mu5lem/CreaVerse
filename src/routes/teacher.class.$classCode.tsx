@@ -103,6 +103,14 @@ function ClassDetail() {
     if (creating || !form.title.trim()) return;
     setCreating(true);
     try {
+      let dueIso: string | null = null;
+      if (dueDate) {
+        const [hh, mm] = (dueTime || "23:59").split(":").map((v) => parseInt(v, 10));
+        const d = new Date(dueDate);
+        d.setHours(Number.isFinite(hh) ? hh : 23, Number.isFinite(mm) ? mm : 59, 0, 0);
+        if (Number.isNaN(d.getTime())) throw new Error("Invalid due date");
+        dueIso = d.toISOString();
+      }
       const { data: created, error } = await supabase
         .from("assignments")
         .insert({
@@ -110,7 +118,7 @@ function ClassDetail() {
           title: form.title.trim(),
           description: form.description.trim() || null,
           link_url: form.link_url.trim() || null,
-          due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
+          due_date: dueIso,
         })
         .select("*")
         .single();
@@ -125,7 +133,9 @@ function ClassDetail() {
         await supabase.from("assignments").update({ media_url: path }).eq("id", created.id);
       }
       toast.success("Assignment created");
-      setForm({ title: "", description: "", due_date: "", link_url: "" });
+      setForm({ title: "", description: "", link_url: "" });
+      setDueDate(undefined);
+      setDueTime("23:59");
       setFile(null);
       await load();
     } catch (err) {
