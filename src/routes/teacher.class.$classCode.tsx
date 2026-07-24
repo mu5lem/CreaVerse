@@ -107,34 +107,42 @@ function ClassDetail() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data: c }, { data: enr }, { data: asn }] = await Promise.all([
+    const [{ data: c }, { data: enr }, { data: asn }, { data: reqs }] = await Promise.all([
       supabase.from("classes").select("*").eq("class_code", classCode).eq("teacher_id", user.id).maybeSingle(),
-      supabase.from("enrollments").select("student_id, enrolled_at").eq("class_code", classCode),
+      supabase.from("enrollments").select("student_id, enrolled_at, suspended").eq("class_code", classCode),
       supabase.from("assignments").select("*").eq("class_code", classCode).order("created_at", { ascending: false }),
+      supabase.from("enrollment_requests").select("*").eq("class_code", classCode).eq("status", "pending").order("created_at", { ascending: false }),
     ]);
     setCls((c as ClassRow | null) ?? null);
     setAssignments((asn ?? []) as Assignment[]);
 
-    const enrRows = (enr ?? []) as { student_id: string; enrolled_at: string }[];
-    if (enrRows.length > 0) {
+    const enrRows = (enr ?? []) as { student_id: string; enrolled_at: string; suspended: boolean }[];
+    const susMap: Record<string, boolean> = {};
+    enrRows.forEach((e) => { susMap[e.student_id] = !!e.suspended; });
+    setSuspendedMap(susMap);
+    const reqRows = (reqs ?? []) as EnrollmentRequest[];
+
+    const allIds = Array.from(new Set([...enrRows.map((e) => e.student_id), ...reqRows.map((r) => r.student_id)]));
+    let profMap = new Map<string, { email: string | null; full_name: string | null }>();
+    if (allIds.length > 0) {
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, email, full_name")
-        .in("id", enrRows.map((e) => e.student_id));
-      const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
-      setStudents(
-        enrRows.map((e) => {
-          const p = profMap.get(e.student_id);
-          return {
-            ...e,
-            email: p?.email ?? null,
-            full_name: (p as { full_name?: string | null } | undefined)?.full_name ?? null,
-          };
-        }),
-      );
-    } else {
-      setStudents([]);
+        .in("id", allIds);
+      profMap = new Map((profs ?? []).map((p) => [p.id, { email: p.email ?? null, full_name: (p as { full_name?: string | null }).full_name ?? null }]));
     }
+    setStudents(
+      enrRows.map((e) => {
+        const p = profMap.get(e.student_id);
+        return { ...e, email: p?.email ?? null, full_name: p?.full_name ?? null, suspended: e.suspended };
+      }),
+    );
+    setRequests(
+      reqRows.map((r) => {
+        const p = profMap.get(r.student_id);
+        return { ...r, student_email: p?.email ?? null, student_name: p?.full_name ?? null };
+      }),
+    );
     setLoading(false);
   }, [user, classCode]);
 
