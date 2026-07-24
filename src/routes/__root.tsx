@@ -154,12 +154,16 @@ function RootComponent() {
 
   useEffect(() => {
     try {
-      const theme = window.localStorage.getItem("creaverse:theme") ?? "system";
-      const dark = theme === "dark" || (theme === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
-      document.documentElement.classList.toggle("dark", dark);
+      const theme = window.localStorage.getItem("creaverse:theme");
+      // Only apply a theme if the user has explicitly chosen one — otherwise the OnboardingGate will prompt.
+      if (theme) {
+        const dark = theme === "dark" || (theme === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      }
     } catch {
       /* ignore */
     }
+
 
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
     const h = window.location.hostname;
