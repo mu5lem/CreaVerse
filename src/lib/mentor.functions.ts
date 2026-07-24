@@ -43,6 +43,16 @@ export const askMentor = createServerFn({ method: "POST" })
       university: "The learner is at university level. You may use advanced concepts, derivations, and references.",
     }[data.level];
 
+    const isCareer = data.subject.toLowerCase().includes("career");
+    const careerAddon = isCareer
+      ? `\n\nCareer Counseling mode:
+- The student wants help exploring careers and fields. Act like a warm, curious career counselor, not a lecturer.
+- Start by asking a few short, friendly questions (one or two at a time, not a long list) to understand: what they enjoy, subjects that feel easy or fun, hobbies, personality style (people vs. things vs. ideas), lifestyle they want, and any constraints (location, budget, family expectations).
+- After you have enough signal, suggest 3–5 career fields that fit them. For each field, briefly cover: what the day-to-day work looks like, why it fits them, importance/impact in society, current scope and job market (globally and in Pakistan where relevant), typical study path and entry routes, salary/growth outlook, and honest downsides or challenges.
+- Keep it conversational — one focused question or one focused suggestion set at a time, not a wall of text. Invite them to react and refine.
+- Never push a single field. Present options and trade-offs so they can decide.`
+      : "";
+
     const systemPrompt = `You are CreaVerse Mentor, a friendly, warm AI companion for students. The student's currently selected subject is "${data.subject}", but that is only a hint about what they might want help with — it is NOT a command to steer every conversation toward it.
 ${levelInstruction}
 ${langInstruction}
@@ -54,7 +64,8 @@ How to behave:
 - You may chat about life, motivation, study habits, careers, feelings, or anything else the student brings up. Be supportive and human.
 - Keep replies concise. Use short paragraphs; use bullet points and worked examples only when they actually help.
 - Where genuinely relevant to an academic question, you can mention Pakistani curriculum context (Federal/Punjab Board, MDCAT, ECAT, HEC), but never force it.
-- Never refuse a genuine question. Be encouraging and never condescending.`;
+- Never refuse a genuine question. Be encouraging and never condescending.${careerAddon}`;
+
 
 
     const messages = [
