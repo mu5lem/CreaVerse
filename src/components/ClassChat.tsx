@@ -114,15 +114,36 @@ export function ClassChat({ classCode }: { classCode: string }) {
     const trimmed = text.trim().slice(0, 2000);
     if (!trimmed) return;
     setSending(true);
-    const { error } = await supabase.from("chat_messages").insert({
+    // Optimistic: append immediately so the message shows without waiting for the server round-trip.
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimistic: ChatMessage = {
+      id: tempId,
       class_code: classCode,
       sender_id: user.id,
       message_text: trimmed,
-    });
-    setSending(false);
-    if (error) return toast.error(error.message);
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
     clearText();
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .insert({ class_code: classCode, sender_id: user.id, message_text: trimmed })
+      .select()
+      .single();
+    setSending(false);
+    if (error) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      return toast.error(error.message);
+    }
+    if (data) {
+      setMessages((prev) => {
+        // Replace temp with real; ignore if realtime already delivered it.
+        if (prev.some((m) => m.id === data.id)) return prev.filter((m) => m.id !== tempId);
+        return prev.map((m) => (m.id === tempId ? (data as ChatMessage) : m));
+      });
+    }
   };
+
 
   const beginEdit = (m: ChatMessage) => {
     setEditingId(m.id);
