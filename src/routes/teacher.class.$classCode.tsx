@@ -454,9 +454,6 @@ function ClassDetail() {
                   </ul>
                 </section>
               )}
-                  </ul>
-                )}
-              </section>
 
               {/* Create assignment */}
               <form onSubmit={createAssignment} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
