@@ -285,15 +285,33 @@ function ClassDetail() {
           </div>
         ) : (
           <>
-            <div className="mb-8">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--color-parchment)] px-3 py-1 font-mono text-xs text-foreground">
-                {cls.class_code}
+            <div className="mb-8 flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--color-parchment)] px-3 py-1 font-mono text-xs text-foreground">
+                  {cls.class_code}
+                </div>
+                <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
+                  {cls.title}
+                </h1>
+                {cls.grade && <p className="mt-1 text-sm text-muted-foreground">{cls.grade}</p>}
+                {cls.description && <p className="mt-2 text-muted-foreground">{cls.description}</p>}
               </div>
-              <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
-                {cls.title}
-              </h1>
-              {cls.grade && <p className="mt-1 text-sm text-muted-foreground">{cls.grade}</p>}
-              {cls.description && <p className="mt-2 text-muted-foreground">{cls.description}</p>}
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={openEditClass}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-[var(--color-ember)]/60"
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteClassOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-destructive/60 hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </button>
+              </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
