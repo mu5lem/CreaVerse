@@ -524,31 +524,39 @@ function ClassDetail() {
                       </button>
                     )}
                   </div>
-                  <input
-                    type="url"
-                    placeholder="Attach a link (optional) — https://…"
-                    value={form.link_url}
-                    onChange={(e) => setForm({ ...form, link_url: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                  />
-                  {form.link_url.trim() && (
-                    <LinkPreview url={form.link_url.trim()} title={form.title.trim() || undefined} />
+                  {asnKind === "plain" ? (
+                    <>
+                      <input
+                        type="url"
+                        placeholder="Attach a link (optional) — https://…"
+                        value={form.link_url}
+                        onChange={(e) => setForm({ ...form, link_url: e.target.value })}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                      />
+                      {form.link_url.trim() && (
+                        <LinkPreview url={form.link_url.trim()} title={form.title.trim() || undefined} />
+                      )}
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2 text-sm text-muted-foreground">
+                        <Upload className="h-4 w-4" />
+                        <span className="truncate">{file ? file.name : "Attach a file (optional)"}</span>
+                        <input type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                      </label>
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-border bg-background p-3">
+                      <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Quiz questions</span>
+                        <span>Total: {totalPoints(questions)} pts</span>
+                      </div>
+                      <QuizBuilder value={questions} onChange={setQuestions} />
+                    </div>
                   )}
-                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2 text-sm text-muted-foreground">
-                    <Upload className="h-4 w-4" />
-                    <span className="truncate">{file ? file.name : "Attach a file (optional)"}</span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    />
-                  </label>
                   <button
                     type="submit"
                     disabled={creating}
                     className="w-full rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
                   >
-                    {creating ? "Creating…" : "Publish assignment"}
+                    {creating ? "Creating…" : (asnKind === "quiz" ? "Publish quiz" : "Publish assignment")}
                   </button>
                 </div>
               </form>
