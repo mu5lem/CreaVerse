@@ -6,11 +6,14 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, LogOut } from "lucide-react";
 import { ClassChat } from "@/components/ClassChat";
 import { LinkPreview } from "@/components/LinkPreview";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { QuizTaker } from "@/components/QuizTaker";
+import type { Question, AnswerMap } from "@/lib/quiz-types";
+import { autoScore, totalPoints } from "@/lib/quiz-types";
 
 export const Route = createFileRoute("/student/class/$classCode")({
   component: () => (
@@ -35,6 +38,9 @@ interface Assignment {
   media_url: string | null;
   link_url: string | null;
   due_date: string | null;
+  assignment_kind: string;
+  questions: Question[] | null;
+  total_marks: number | null;
 }
 interface Submission {
   id: string;
@@ -44,6 +50,8 @@ interface Submission {
   grade: string | null;
   feedback: string | null;
   submitted_at: string;
+  answers: AnswerMap | null;
+  obtained_marks: number | null;
 }
 
 function StudentClass() {
@@ -54,17 +62,26 @@ function StudentClass() {
   const [submissions, setSubmissions] = useState<Record<string, Submission>>({});
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<Record<string, { notes: string; file: File | null }>>({});
+  const [quizDrafts, setQuizDrafts] = useState<Record<string, AnswerMap>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [editingSub, setEditingSub] = useState<Record<string, string>>({});
+  const [enrollment, setEnrollment] = useState<{ suspended: boolean } | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<{ kind: "leave" | "reactivate" } | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [leaveReason, setLeaveReason] = useState("");
+  const [submittingLeave, setSubmittingLeave] = useState(false);
   const confirm = useConfirm();
+
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data: c }, { data: asn }, { data: subs }] = await Promise.all([
+    const [{ data: c }, { data: asn }, { data: subs }, { data: enr }, { data: reqs }] = await Promise.all([
       supabase.from("classes").select("*").eq("class_code", classCode).maybeSingle(),
       supabase.from("assignments").select("*").eq("class_code", classCode).order("created_at", { ascending: false }).limit(100),
       supabase.from("submissions").select("*").eq("student_id", user.id).limit(200),
+      supabase.from("enrollments").select("suspended").eq("class_code", classCode).eq("student_id", user.id).maybeSingle(),
+      supabase.from("enrollment_requests").select("kind").eq("class_code", classCode).eq("student_id", user.id).eq("status", "pending").limit(1),
     ]);
     let classRow = (c as ClassRow | null) ?? null;
     if (classRow?.teacher_id) {
@@ -80,6 +97,9 @@ function StudentClass() {
     const map: Record<string, Submission> = {};
     ((subs ?? []) as Submission[]).forEach((s) => (map[s.assignment_id] = s));
     setSubmissions(map);
+    setEnrollment(enr ? { suspended: !!(enr as { suspended: boolean }).suspended } : null);
+    const first = (reqs ?? [])[0] as { kind: "leave" | "reactivate" } | undefined;
+    setPendingRequest(first ? { kind: first.kind } : null);
     setLoading(false);
   }, [user, classCode]);
 
@@ -194,6 +214,57 @@ function StudentClass() {
     await load();
   };
 
+  const submitQuiz = async (a: Assignment) => {
+    if (!user || submitting) return;
+    const answers = quizDrafts[a.id] ?? {};
+    const qs = a.questions ?? [];
+    if (qs.length === 0) return toast.error("Quiz has no questions");
+    setSubmitting(a.id);
+    try {
+      const { earned, possible } = autoScore(qs, answers);
+      const percent = possible > 0 ? Math.round((earned / possible) * 1000) / 10 : null;
+      const { error } = await supabase.from("submissions").upsert(
+        {
+          assignment_id: a.id,
+          student_id: user.id,
+          notes: null,
+          file_url: null,
+          answers: JSON.parse(JSON.stringify(answers)),
+          obtained_marks: earned,
+          grade: percent !== null ? String(percent) : null,
+          submitted_at: new Date().toISOString(),
+        },
+        { onConflict: "assignment_id,student_id" },
+      );
+      if (error) throw error;
+      toast.success("Quiz submitted");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit");
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const submitLeaveRequest = async () => {
+    if (!user || submittingLeave) return;
+    setSubmittingLeave(true);
+    const kind: "leave" | "reactivate" = enrollment?.suspended ? "reactivate" : "leave";
+    const { error } = await supabase.from("enrollment_requests").insert({
+      class_code: classCode,
+      student_id: user.id,
+      kind,
+      reason: leaveReason.trim() || null,
+      status: "pending",
+    });
+    setSubmittingLeave(false);
+    if (error) return toast.error(error.message);
+    toast.success("Request sent to your teacher");
+    setLeaveOpen(false);
+    setLeaveReason("");
+    await load();
+  };
+
   if (!profile) return null;
 
   return (
@@ -225,7 +296,29 @@ function StudentClass() {
               )}
               {cls.grade && <p className="mt-1 text-sm text-muted-foreground">{cls.grade}</p>}
               {cls.description && <p className="mt-2 text-muted-foreground">{cls.description}</p>}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {enrollment?.suspended && (
+                  <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+                    Your teacher has suspended you from this class.
+                  </span>
+                )}
+                {pendingRequest ? (
+                  <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                    {pendingRequest.kind === "leave" ? "Leave request pending teacher approval" : "Reactivation request pending"}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { setLeaveReason(""); setLeaveOpen(true); }}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition hover:border-destructive/60 hover:text-destructive"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    {enrollment?.suspended ? "Request reactivation" : "Request to leave"}
+                  </button>
+                )}
+              </div>
             </div>
+
 
             <h2 className="mb-4 font-display text-2xl text-foreground">Assignments</h2>
             {assignments.length === 0 ? (
@@ -271,7 +364,55 @@ function StudentClass() {
                         </div>
                       )}
 
-                      {sub ? (
+                      {a.assignment_kind === "quiz" ? (
+                        (() => {
+                          const qs = a.questions ?? [];
+                          const savedAnswers = (sub?.answers ?? {}) as AnswerMap;
+                          const answers = quizDrafts[a.id] ?? savedAnswers;
+                          const total = totalPoints(qs);
+                          return (
+                            <div className="mt-4 rounded-lg border border-border bg-background p-3">
+                              <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Quiz — {qs.length} question{qs.length === 1 ? "" : "s"}</span>
+                                <span>{total} pts total</span>
+                              </div>
+                              <QuizTaker
+                                questions={qs}
+                                answers={answers}
+                                onChange={(next) => setQuizDrafts({ ...quizDrafts, [a.id]: next })}
+                                readOnly={!!sub}
+                              />
+                              {sub ? (
+                                <div className="mt-3 border-t border-border pt-3">
+                                  <p className="text-sm">
+                                    <span className="text-muted-foreground">Auto-score:</span>{" "}
+                                    <span className="font-medium text-foreground">
+                                      {sub.obtained_marks ?? 0} / {total}
+                                    </span>
+                                    {sub.grade && (
+                                      <span className="ml-2 text-muted-foreground">({sub.grade}%)</span>
+                                    )}
+                                  </p>
+                                  {sub.feedback && (
+                                    <p className="mt-1 text-sm text-muted-foreground">{sub.feedback}</p>
+                                  )}
+                                  <p className="mt-2 text-xs text-muted-foreground">
+                                    Submitted {new Date(sub.submitted_at).toLocaleString()}
+                                  </p>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => submitQuiz(a)}
+                                  disabled={submitting === a.id}
+                                  className="mt-3 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                                >
+                                  {submitting === a.id ? "Submitting…" : "Submit quiz"}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()
+                      ) : sub ? (
                         <div className="mt-4 rounded-lg border border-border bg-background p-3">
                           {editingSub[a.id] !== undefined ? (
                             <div className="space-y-2">
@@ -405,6 +546,31 @@ function StudentClass() {
           </>
         )}
       </main>
+      {leaveOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !submittingLeave && setLeaveOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <div className="mb-3 font-display text-lg text-foreground">
+              {enrollment?.suspended ? "Request reactivation" : "Request to leave this class"}
+            </div>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Your teacher will review and approve or deny this request.
+            </p>
+            <textarea
+              value={leaveReason}
+              onChange={(e) => setLeaveReason(e.target.value)}
+              rows={3}
+              placeholder="Reason (optional)"
+              className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <button onClick={() => setLeaveOpen(false)} disabled={submittingLeave} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
+              <button onClick={submitLeaveRequest} disabled={submittingLeave} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
+                {submittingLeave ? "Sending…" : "Send request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

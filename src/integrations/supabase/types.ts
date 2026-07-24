@@ -215,6 +215,67 @@ export type Database = {
         }
         Relationships: []
       }
+      enrollment_requests: {
+        Row: {
+          class_code: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          kind: string
+          reason: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_code: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kind: string
+          reason?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_code?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kind?: string
+          reason?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_requests_class_code_fkey"
+            columns: ["class_code"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["class_code"]
+          },
+          {
+            foreignKeyName: "enrollment_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           class_code: string
@@ -531,6 +592,7 @@ export type Database = {
       }
       submissions: {
         Row: {
+          answers: Json | null
           assignment_id: string
           feedback: string | null
           file_url: string | null
@@ -543,6 +605,7 @@ export type Database = {
           submitted_at: string
         }
         Insert: {
+          answers?: Json | null
           assignment_id: string
           feedback?: string | null
           file_url?: string | null
@@ -555,6 +618,7 @@ export type Database = {
           submitted_at?: string
         }
         Update: {
+          answers?: Json | null
           assignment_id?: string
           feedback?: string | null
           file_url?: string | null
