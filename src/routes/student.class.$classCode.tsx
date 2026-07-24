@@ -6,11 +6,14 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, LogOut } from "lucide-react";
 import { ClassChat } from "@/components/ClassChat";
 import { LinkPreview } from "@/components/LinkPreview";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { QuizTaker } from "@/components/QuizTaker";
+import type { Question, AnswerMap } from "@/lib/quiz-types";
+import { autoScore, totalPoints } from "@/lib/quiz-types";
 
 export const Route = createFileRoute("/student/class/$classCode")({
   component: () => (
