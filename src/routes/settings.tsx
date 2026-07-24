@@ -95,12 +95,30 @@ function SettingsPage() {
   };
 
   const changePassword = async () => {
-    if (newPassword.length < 6) return toast.error("Password must be at least 6 characters");
+    if (!profile?.email) return toast.error("No account email on file.");
+    if (!currentPassword) return toast.error("Enter your current password.");
+    if (newPassword.length < 6) return toast.error("New password must be at least 6 characters.");
+    if (newPassword !== confirmPassword) return toast.error("New password and confirmation do not match.");
+    if (newPassword === currentPassword) return toast.error("New password must be different from the current one.");
+    setChangingPw(true);
+    // Verify the current password by attempting a fresh sign-in.
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: currentPassword,
+    });
+    if (verifyErr) {
+      setChangingPw(false);
+      return toast.error("Current password is incorrect.");
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPw(false);
     if (error) return toast.error(error.message);
+    setCurrentPassword("");
     setNewPassword("");
+    setConfirmPassword("");
     toast.success("Password changed");
   };
+
 
   const deactivate = async () => {
     const ok = await confirm({
