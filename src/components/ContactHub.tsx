@@ -1,4 +1,4 @@
-import { Mail, Phone as PhoneIcon, Facebook, Instagram, MessageCircle } from "lucide-react";
+import { Mail, Facebook, Instagram, MessageCircle } from "lucide-react";
 import { useState } from "react";
 
 const contacts = [
@@ -7,12 +7,6 @@ const contacts = [
     label: "Email",
     value: "support@creaverse.site",
     icon: Mail,
-  },
-  {
-    href: "https://wa.me/923116230209",
-    label: "WhatsApp",
-    value: "+92 311 6230209",
-    icon: PhoneIcon,
   },
   {
     href: "https://www.facebook.com/people/CreaVerse/61592002266797/",

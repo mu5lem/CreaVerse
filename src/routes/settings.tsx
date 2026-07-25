@@ -212,7 +212,7 @@ function SettingsPage() {
                 <div className="mb-4 flex items-center gap-2"><UserCog className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Profile</h3></div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="WhatsApp / phone" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
                 </div>
               </section>
 

@@ -1,0 +1,2 @@
+ALTER TABLE public.onboarding_responses DROP CONSTRAINT IF EXISTS onboarding_responses_user_id_fkey;
+ALTER TABLE public.onboarding_responses ADD CONSTRAINT onboarding_responses_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;

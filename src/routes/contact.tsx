@@ -6,9 +6,9 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact CreaVerse — Get in touch" },
-      { name: "description", content: "Reach the CreaVerse team by email, WhatsApp, Facebook, or Instagram." },
+      { name: "description", content: "Reach the CreaVerse team by email, Facebook, or Instagram." },
       { property: "og:title", content: "Contact CreaVerse" },
-      { property: "og:description", content: "Reach the CreaVerse team by email, WhatsApp, Facebook, or Instagram." },
+      { property: "og:description", content: "Reach the CreaVerse team by email, Facebook, or Instagram." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
