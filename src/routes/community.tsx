@@ -50,7 +50,7 @@ function CommunityPage() {
           </div>
           <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-foreground">Real communities. Real learning.</h1>
           <p className="mt-2 text-muted-foreground">
-            We only link to established, publicly-accessible pages — no private WhatsApp/Facebook invites.
+            We only link to established, publicly-accessible pages — no private invites.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
