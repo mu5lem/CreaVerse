@@ -520,15 +520,7 @@ export type Database = {
           purpose?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "onboarding_responses_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
