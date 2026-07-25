@@ -9,6 +9,12 @@ const contacts = [
     icon: Mail,
   },
   {
+    href: "mailto:support@creaverse.site?subject=WhatsApp%20contact%20request",
+    label: "WhatsApp",
+    value: "Request via email",
+    icon: MessageCircle,
+  },
+  {
     href: "https://www.facebook.com/people/CreaVerse/61592002266797/",
     label: "Facebook",
     value: "@CreaVerse",
