@@ -59,10 +59,11 @@ export function OnboardingGate() {
           return false;
         }
       })();
-      if (!existing) {
-        setNeedsSurvey(true);
-      } else if (!hasTheme) {
+      // Theme first, then survey.
+      if (!hasTheme) {
         setNeedsTheme(true);
+      } else if (!existing) {
+        setNeedsSurvey(true);
       }
       setChecked(true);
     })();
@@ -73,28 +74,25 @@ export function OnboardingGate() {
 
   const onSurveyDone = () => {
     setNeedsSurvey(false);
-    // After survey, prompt for theme if not already chosen on this device.
-    let hasTheme = false;
-    try {
-      hasTheme = !!localStorage.getItem(THEME_KEY);
-    } catch {
-      /* ignore */
-    }
-    if (!hasTheme) setNeedsTheme(true);
   };
 
-  const chooseTheme = (t: ThemePref) => {
+  const chooseTheme = async (t: ThemePref) => {
     applyTheme(t);
     setNeedsTheme(false);
+    // After theme, prompt for survey if not yet submitted.
+    if (!user) return;
+    const { data: existing } = await supabase
+      .from("onboarding_responses")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!existing) setNeedsSurvey(true);
   };
 
   if (loading || !user) return null;
 
-  if (needsSurvey) {
-    return <SurveyDialog userId={user.id} onDone={onSurveyDone} />;
-  }
-
   if (needsTheme) {
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
         <div className="animate-fade-up w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
