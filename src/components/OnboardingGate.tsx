@@ -135,8 +135,13 @@ export function OnboardingGate() {
     );
   }
 
+  if (needsSurvey) {
+    return <SurveyDialog userId={user.id} onDone={onSurveyDone} />;
+  }
+
   return null;
 }
+
 
 const PURPOSES = [
   "I'm a student — for classes & study",
