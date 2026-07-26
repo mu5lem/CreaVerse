@@ -90,9 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     (async () => {
-      // Retry a few times in case the auth trigger that creates the profile row
-      // hasn't finished yet (common on first Google sign-in).
-      for (let attempt = 0; attempt < 6; attempt++) {
+      // Retry generously in case the auth trigger that creates the profile row
+      // hasn't finished yet (common on first Google sign-in). Total ~10s.
+      for (let attempt = 0; attempt < 20; attempt++) {
         const { data, error: err } = await supabase
           .from("profiles")
           .select("*")
@@ -111,11 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         // No row yet — wait and retry.
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 500));
       }
       if (cancelled) return;
       setProfile(null);
       setLoading(false);
+
     })();
     return () => {
       cancelled = true;

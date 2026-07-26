@@ -56,7 +56,7 @@ function AuthPage() {
   const { mode = "signin" } = Route.useSearch();
   const isSignup = mode === "signup";
   const navigate = useNavigate();
-  const { profile, loading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
 
   const [method, setMethod] = useState<Method>("email");
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -111,15 +111,19 @@ function AuthPage() {
   };
 
   useEffect(() => {
-    // Only auto-redirect once we finish outstanding handshake / verify flows.
-    if (!authLoading && profile && !waOpen && !emailVerifyOpen) {
-      // If the user has an unverified phone, force the handshake lock.
-      if (profile.phone && (profile as any).phone_verified === false) {
-        return;
-      }
+    // Once we have a signed-in user, get them off the auth page immediately.
+    // If the profile row hasn't materialised yet (Google sign-in + auth trigger race),
+    // send them to the default student dashboard — ProtectedRoute will rehome them
+    // to the right role page once the profile loads.
+    if (waOpen || emailVerifyOpen) return;
+    if (profile) {
+      if (profile.phone && (profile as any).phone_verified === false) return;
       navigate({ to: roleHome[profile.role] });
+    } else if (user && !authLoading) {
+      navigate({ to: roleHome.student });
     }
-  }, [authLoading, profile, navigate, waOpen, emailVerifyOpen]);
+  }, [authLoading, user, profile, navigate, waOpen, emailVerifyOpen]);
+
 
   const handleGoogle = async () => {
     if (googleLoading) return;
