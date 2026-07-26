@@ -20,33 +20,31 @@ function applyTheme(theme: ThemePref) {
 }
 
 /**
- * Two-step first-run experience:
- *  1. If no theme has ever been chosen on this device, ask the user to pick one (light / dark / system).
- *  2. Once the user is signed in and hasn't filled the onboarding survey, ask 4 short questions and save
- *     them to `onboarding_responses` (admins read this table).
+ * First-run experience for a newly signed-in user:
+ *  1. Survey (4 short questions) — saved to `onboarding_responses` (admins read this).
+ *  2. Only after the survey submits, ask them to pick Light / Dark / System.
+ *
+ * Nothing renders while signed out — no theme picker, no survey on the public landing page.
  */
 export function OnboardingGate() {
   const { user, loading } = useAuth();
-  const [themeOpen, setThemeOpen] = useState(false);
-  const [surveyOpen, setSurveyOpen] = useState(false);
-  const [checkingSurvey, setCheckingSurvey] = useState(false);
+  const [needsSurvey, setNeedsSurvey] = useState(false);
+  const [needsTheme, setNeedsTheme] = useState(false);
+  const [checked, setChecked] = useState(false);
 
-  // Step 1: theme choice on this device.
+  // Signed out → hide everything and reset any pending prompts.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const stored = localStorage.getItem(THEME_KEY);
-      if (!stored) setThemeOpen(true);
-    } catch {
-      /* ignore */
+    if (!loading && !user) {
+      setNeedsSurvey(false);
+      setNeedsTheme(false);
+      setChecked(false);
     }
-  }, []);
+  }, [user, loading]);
 
-  // Step 2: survey the first time the signed-in user enters the app (if not answered yet).
+  // Signed in: figure out what still needs to happen for this user.
   useEffect(() => {
-    if (loading || !user || themeOpen) return;
+    if (loading || !user || checked) return;
     let cancelled = false;
-    setCheckingSurvey(true);
     (async () => {
       const { data: existing } = await supabase
         .from("onboarding_responses")
@@ -54,30 +52,59 @@ export function OnboardingGate() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      setCheckingSurvey(false);
-      if (!existing) setSurveyOpen(true);
+      const hasTheme = (() => {
+        try {
+          return !!localStorage.getItem(THEME_KEY);
+        } catch {
+          return false;
+        }
+      })();
+      if (!existing) {
+        setNeedsSurvey(true);
+      } else if (!hasTheme) {
+        setNeedsTheme(true);
+      }
+      setChecked(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, loading, themeOpen]);
+  }, [user, loading, checked]);
+
+  const onSurveyDone = () => {
+    setNeedsSurvey(false);
+    // After survey, prompt for theme if not already chosen on this device.
+    let hasTheme = false;
+    try {
+      hasTheme = !!localStorage.getItem(THEME_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (!hasTheme) setNeedsTheme(true);
+  };
 
   const chooseTheme = (t: ThemePref) => {
     applyTheme(t);
-    setThemeOpen(false);
+    setNeedsTheme(false);
   };
 
-  if (themeOpen) {
+  if (loading || !user) return null;
+
+  if (needsSurvey) {
+    return <SurveyDialog userId={user.id} onDone={onSurveyDone} />;
+  }
+
+  if (needsTheme) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
         <div className="animate-fade-up w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
           <div className="mb-2 flex items-center gap-2 text-[var(--color-ember)]">
             <Sparkles className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Welcome</span>
+            <span className="text-xs font-semibold uppercase tracking-wide">One last thing</span>
           </div>
           <h2 className="font-display text-2xl font-semibold text-foreground">Pick your theme</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose how CreaVerse should look on this device. You can change this anytime in Settings.
+            Choose how CreaVerse should look on this device. You can change it anytime in Settings.
           </p>
           <div className="mt-5 grid grid-cols-3 gap-3">
             <button
@@ -110,12 +137,6 @@ export function OnboardingGate() {
     );
   }
 
-  if (surveyOpen && user) {
-    return <SurveyDialog userId={user.id} onDone={() => setSurveyOpen(false)} />;
-  }
-
-  // Keep the checking state invisible; no UI needed.
-  void checkingSurvey;
   return null;
 }
 
@@ -160,7 +181,6 @@ function SurveyDialog({ userId, onDone }: { userId: string; onDone: () => void }
       });
     setSubmitting(false);
     if (error) {
-      // Unique index means they already answered; treat as done.
       if (error.code === "23505") {
         onDone();
         return;
