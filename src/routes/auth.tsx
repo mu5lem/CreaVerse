@@ -56,7 +56,7 @@ function AuthPage() {
   const { mode = "signin" } = Route.useSearch();
   const isSignup = mode === "signup";
   const navigate = useNavigate();
-  const { profile, loading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
 
   const [method, setMethod] = useState<Method>("email");
   const [googleLoading, setGoogleLoading] = useState(false);
