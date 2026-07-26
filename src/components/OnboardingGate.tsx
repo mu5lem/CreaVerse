@@ -42,23 +42,20 @@ export function OnboardingGate() {
     }
   }, []);
 
-  // Step 2: survey once user is signed in AND has made their first journal entry.
+  // Step 2: survey the first time the signed-in user enters the app (if not answered yet).
   useEffect(() => {
     if (loading || !user || themeOpen) return;
     let cancelled = false;
     setCheckingSurvey(true);
     (async () => {
-      // Only prompt after the user has created at least one journal entry post-signup.
-      const [{ data: existing }, { count: entryCount }] = await Promise.all([
-        supabase.from("onboarding_responses").select("id").eq("user_id", user.id).maybeSingle(),
-        supabase
-          .from("journal_entries")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id),
-      ]);
+      const { data: existing } = await supabase
+        .from("onboarding_responses")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
       if (cancelled) return;
       setCheckingSurvey(false);
-      if (!existing && (entryCount ?? 0) > 0) setSurveyOpen(true);
+      if (!existing) setSurveyOpen(true);
     })();
     return () => {
       cancelled = true;
