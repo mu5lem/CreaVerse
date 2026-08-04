@@ -88,14 +88,14 @@ function AuthPage() {
     // If the profile row hasn't materialised yet (Google sign-in + auth trigger race),
     // send them to the default student dashboard — ProtectedRoute will rehome them
     // to the right role page once the profile loads.
-    if (waOpen || emailVerifyOpen) return;
+    if (confirmOpen) return;
     if (profile) {
-      if (profile.phone && (profile as any).phone_verified === false) return;
       navigate({ to: roleHome[profile.role] });
     } else if (user && !authLoading) {
       navigate({ to: roleHome.student });
     }
-  }, [authLoading, user, profile, navigate, waOpen, emailVerifyOpen]);
+  }, [authLoading, user, profile, navigate, confirmOpen]);
+
 
 
   const handleGoogle = async () => {
