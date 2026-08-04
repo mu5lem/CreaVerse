@@ -116,24 +116,6 @@ function AuthPage() {
     }
   };
 
-  // Strict E.164 validation. Accepts local Pakistani 03xx… and normalizes to +92.
-  const validatePhone = (raw: string): string | null => {
-    const trimmed = raw.trim().replace(/[\s-()]/g, "");
-    // Handle local PK: 03xxxxxxxxx -> +923xxxxxxxxx
-    const candidate = /^0[3]\d{9}$/.test(trimmed)
-      ? `+92${trimmed.slice(1)}`
-      : trimmed.startsWith("+")
-      ? trimmed
-      : `+${trimmed}`;
-    try {
-      if (!isValidPhoneNumber(candidate)) return null;
-      const parsed = parsePhoneNumberFromString(candidate);
-      return parsed?.number || null;
-    } catch {
-      return null;
-    }
-  };
-
   const profileExtras = () => ({
     gender: gender || null,
     school: noSchool ? null : school.trim() || null,
@@ -158,14 +140,12 @@ function AuthPage() {
           .insert({ id: uid, email, role: "student", full_name: fullName.trim(), ...profileExtras() });
         if (pErr && pErr.code !== "23505") throw pErr;
       }
-      // If email confirmation is required, user isn't fully signed in yet -> show 6-digit UI.
+      // Email confirmation required: Supabase mails a confirmation LINK.
       if (!data.session) {
-        setEmailVerifyEmail(email);
-        setPendingEmailProfile({ fullName: fullName.trim(), gender: gender || null, school: noSchool ? null : school.trim() || null });
-        setEmailOtp(["", "", "", "", "", ""]);
-        setEmailVerifyOpen(true);
+        setConfirmEmail(email);
+        setConfirmOpen(true);
         setResendIn(60);
-        toast.success("We sent a 6-digit code to your email.");
+        toast.success("Confirmation link sent — check your inbox.");
         return;
       }
       toast.success(`Account created — welcome to ${brand.name}!`);
@@ -175,50 +155,6 @@ function AuthPage() {
       toast.success("Welcome back!");
     }
     await refreshProfile();
-  };
-
-  // Phone auth uses password (like email), with WhatsApp handshake lock as the
-  // "did this human actually have this number" gate on signup.
-  const handlePhone = async () => {
-    const p = validatePhone(phone);
-    if (!p) {
-      toast.error("Your number is incorrect. Please enter a valid international WhatsApp phone number.");
-      throw new Error("invalid-phone");
-    }
-    const syntheticEmail = phoneToSyntheticEmail(p);
-    if (isSignup) {
-      if (!fullName.trim()) throw new Error("Please enter your full name");
-      if (password.length < 6) throw new Error("Password must be at least 6 characters");
-      const code = generateWaCode();
-      const created = await registerPhone({
-        data: {
-          syntheticEmail,
-          password,
-          fullName: fullName.trim(),
-          phone: p,
-          waCode: code,
-          gender: gender || null,
-          school: noSchool ? null : school.trim() || null,
-        },
-      });
-      if (!created.ok) throw new Error("Could not create account");
-      await supabase.auth.signInWithPassword({ email: syntheticEmail, password });
-      setWaPhone(p);
-      setWaCode(code);
-      setWaUserId(created.userId);
-      setWaSent(false);
-      setWaConfirmCode("");
-      setWaOpen(true);
-      await refreshProfile();
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: syntheticEmail,
-        password,
-      });
-      if (error) throw new Error("Invalid phone number or password");
-      toast.success("Welcome back!");
-      await refreshProfile();
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -232,125 +168,22 @@ function AuthPage() {
     try {
       await handleEmail();
     } catch (err) {
-      if (!(err instanceof Error) || err.message !== "invalid-phone") {
-        toast.error(err instanceof Error ? err.message : "Authentication failed");
-      }
+      toast.error(err instanceof Error ? err.message : "Authentication failed");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const switchMethod = (m: Method) => setMethod(m);
-
-  // ================= Email 6-digit OTP verify =================
-  const setOtpDigit = (i: number, v: string) => {
-    const digit = v.replace(/\D/g, "").slice(-1);
-    setEmailOtp((prev) => {
-      const next = [...prev];
-      next[i] = digit;
-      return next;
-    });
-    if (digit && i < 5) otpRefs.current[i + 1]?.focus();
-  };
-  const onOtpKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !emailOtp[i] && i > 0) {
-      otpRefs.current[i - 1]?.focus();
-    }
-  };
-  const onOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const t = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!t) return;
-    e.preventDefault();
-    const next = ["", "", "", "", "", ""];
-    for (let i = 0; i < t.length; i++) next[i] = t[i];
-    setEmailOtp(next);
-    otpRefs.current[Math.min(t.length, 5)]?.focus();
-  };
-  const verifyEmailOtp = async () => {
-    const token = emailOtp.join("");
-    if (token.length !== 6) return toast.error("Enter the 6-digit code");
-    const { error } = await supabase.auth.verifyOtp({
-      email: emailVerifyEmail,
-      token,
-      type: "signup",
-    });
-    if (error) return toast.error(error.message);
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (uid && pendingEmailProfile) {
-      const { error: pErr } = await supabase.from("profiles").upsert({
-        id: uid,
-        email: emailVerifyEmail,
-        role: "student",
-        full_name: pendingEmailProfile.fullName,
-        gender: pendingEmailProfile.gender,
-        school: pendingEmailProfile.school,
-      });
-      if (pErr) return toast.error(pErr.message);
-    }
-    toast.success("Email verified. Welcome!");
-    setEmailVerifyOpen(false);
-    setPendingEmailProfile(null);
-    await refreshProfile();
-  };
-  const resendEmailOtp = async () => {
-    if (resendIn > 0) return;
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: emailVerifyEmail,
-    });
+  const resendConfirmation = async () => {
+    if (resendIn > 0 || resending) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: confirmEmail });
+    setResending(false);
     if (error) return toast.error(error.message);
     setResendIn(60);
-    toast.success("Code resent");
+    toast.success("Confirmation link sent again");
   };
 
-  // ================= WhatsApp handshake lock =================
-  const waHref = useMemo(() => {
-    if (!waPhone || !waCode) return "#";
-    const digits = waPhone.replace(/[^0-9]/g, "");
-    const text = encodeURIComponent(
-      `${waCode} — verify my CreaVerse account. Please do not change this message.`,
-    );
-    return `https://wa.me/${digits}?text=${text}`;
-  }, [waPhone, waCode]);
-
-  // Realtime listener: if a background webhook ever flips phone_verified we release the lock.
-  useEffect(() => {
-    if (!waOpen || !waUserId) return;
-    const ch = supabase
-      .channel(`profile-${waUserId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${waUserId}` },
-        (payload: any) => {
-          if (payload?.new?.phone_verified === true) {
-            setWaOpen(false);
-            refreshProfile();
-          }
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [waOpen, waUserId, refreshProfile]);
-
-  const confirmWaHandshake = async () => {
-    if (!waUserId) return;
-    const entered = waConfirmCode.trim().toUpperCase();
-    if (entered !== waCode.toUpperCase()) {
-      toast.error("Code doesn't match. Send the exact code shown above through WhatsApp.");
-      return;
-    }
-    const { error } = await supabase
-      .from("profiles")
-      .update({ phone_verified: true, wa_verify_code: null })
-      .eq("id", waUserId);
-    if (error) return toast.error(error.message);
-    toast.success("Number verified. Welcome to CreaVerse!");
-    setWaOpen(false);
-    await refreshProfile();
-  };
 
   return (
     <div className="min-h-screen bg-background">
