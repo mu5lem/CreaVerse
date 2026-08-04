@@ -37,26 +37,12 @@ const roleHome = {
   admin: "/admin/dashboard",
 } as const;
 
-type Method = "email" | "phone";
-
-// Normalize a phone into E.164, then convert to a synthetic email so we can
-// use Supabase's built-in email/password auth (avoids paid SMS gateways).
-function phoneToSyntheticEmail(e164: string) {
-  return `${e164.replace(/[^0-9]/g, "")}@phone.creaverse.local`;
-}
-
-function generateWaCode() {
-  const n = Math.floor(1000 + Math.random() * 9000);
-  return `CV-${n}`;
-}
-
 function AuthPage() {
   const { mode = "signin" } = Route.useSearch();
   const isSignup = mode === "signup";
   const navigate = useNavigate();
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
 
-  const [method, setMethod] = useState<Method>("email");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,35 +50,24 @@ function AuthPage() {
   const [gender, setGender] = useState("");
   const [school, setSchool] = useState("");
   const [noSchool, setNoSchool] = useState(false);
-  const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSending, setForgotSending] = useState(false);
 
-  // Email OTP verify state (6-digit code sent by Supabase confirmation email)
-  const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
-  const [emailVerifyEmail, setEmailVerifyEmail] = useState("");
-  const [pendingEmailProfile, setPendingEmailProfile] = useState<{ fullName: string; gender: string | null; school: string | null } | null>(null);
-  const [emailOtp, setEmailOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  // "Check your inbox" state — Supabase sends a confirmation link, not a code.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [resendIn, setResendIn] = useState(0);
-  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const registerPhone = useServerFn(registerPhoneAccount);
-
-  // WhatsApp handshake state
-  const [waOpen, setWaOpen] = useState(false);
-  const [waPhone, setWaPhone] = useState(""); // E.164
-  const [waCode, setWaCode] = useState("");
-  const [waUserId, setWaUserId] = useState<string | null>(null);
-  const [waConfirmCode, setWaConfirmCode] = useState("");
-  const [waSent, setWaSent] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     if (resendIn <= 0) return;
     const t = setInterval(() => setResendIn((n) => (n > 0 ? n - 1 : 0)), 1000);
     return () => clearInterval(t);
   }, [resendIn]);
+
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
