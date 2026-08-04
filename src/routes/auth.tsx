@@ -417,61 +417,53 @@ function AuthPage() {
         </div>
       )}
 
-      {/* ============ Email 6-digit OTP dialog ============ */}
-      {emailVerifyOpen && (
+      {/* ============ Confirm-your-email (link) dialog ============ */}
+      {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="animate-pop-in w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
-            <div className="mb-4 flex items-center gap-3">
-              <BookLogo size={40} className="text-[var(--color-ink)] animate-pulse" />
-              <div>
-                <h3 className="font-display text-xl text-foreground">Verify your email</h3>
-                <p className="text-xs text-muted-foreground">
-                  We sent a 6-digit code to <strong>{emailVerifyEmail}</strong>
+            <div className="mb-4 flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--color-ember)]/10">
+                <MailCheck className="h-5 w-5 text-[var(--color-ember)]" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-display text-xl text-foreground">Confirm your email</h3>
+                <p className="mt-1 break-words text-sm text-muted-foreground">
+                  We sent a confirmation link to <strong className="text-foreground">{confirmEmail}</strong>.
+                  Open that email and tap the link to activate your account, then come back and sign in.
                 </p>
               </div>
             </div>
-            <div className="mt-2 flex justify-between gap-2">
-              {emailOtp.map((d, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { otpRefs.current[i] = el; }}
-                  value={d}
-                  onChange={(e) => setOtpDigit(i, e.target.value)}
-                  onKeyDown={(e) => onOtpKey(i, e)}
-                  onPaste={onOtpPaste}
-                  inputMode="numeric"
-                  maxLength={1}
-                  className="h-14 w-11 rounded-lg border border-input bg-background text-center text-2xl font-semibold text-foreground outline-none focus:border-[var(--color-ember)] focus:ring-2 focus:ring-[var(--color-ember)]/20"
-                />
-              ))}
-            </div>
+            <p className="rounded-lg border border-border bg-[var(--color-parchment)]/50 p-3 text-xs text-muted-foreground">
+              Can't find it? Check your spam or promotions folder — the link expires after a while.
+            </p>
             <button
               type="button"
-              onClick={verifyEmailOtp}
+              onClick={() => { setConfirmOpen(false); navigate({ to: "/auth", search: { mode: "signin" } }); }}
               className="press mt-5 w-full rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
             >
-              Verify & continue
+              Got it — back to sign in
             </button>
-            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <button
                 type="button"
-                onClick={resendEmailOtp}
-                disabled={resendIn > 0}
+                onClick={resendConfirmation}
+                disabled={resendIn > 0 || resending}
                 className="underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50 disabled:no-underline"
               >
-                {resendIn > 0 ? `Resend code in ${resendIn}s` : "Resend code"}
+                {resendIn > 0 ? `Resend link in ${resendIn}s` : resending ? "Sending…" : "Resend link"}
               </button>
               <button
                 type="button"
-                onClick={() => setEmailVerifyOpen(false)}
+                onClick={() => setConfirmOpen(false)}
                 className="hover:text-foreground"
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
+
 
     </div>
   );
