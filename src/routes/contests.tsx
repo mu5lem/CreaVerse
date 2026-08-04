@@ -121,7 +121,7 @@ function ContestsPage() {
                 <h2 className="mt-2 font-display text-lg text-foreground">{c.name}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{c.description}</p>
                 <div className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-ember)] opacity-0 transition group-hover:opacity-100">
-                  Learn more <ExternalLink className="h-3 w-3" />
+                  Learn more about {c.name} <ExternalLink className="h-3 w-3" />
                 </div>
               </a>
             ))}

@@ -23,8 +23,9 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "CreaVerse is a Pakistan-first learning platform for students, teachers, and creators — bringing quality education, AI mentorship, VR lessons, and opportunity discovery to underprivileged learners.",
+          "CreaVerse is a Pakistan-first learning platform for students, teachers, and creators — quality education, AI mentorship, and VR lessons for every learner.",
       },
+
       { property: "og:title", content: "CreaVerse — Education for Everyone" },
       {
         property: "og:description",

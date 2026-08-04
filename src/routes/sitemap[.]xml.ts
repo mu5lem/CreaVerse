@@ -6,7 +6,16 @@ const BASE_URL = "https://spark-creaverse.lovable.app";
 const entries = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/about", changefreq: "monthly", priority: "0.8" },
+  { path: "/academy", changefreq: "weekly", priority: "0.8" },
+  { path: "/opportunities", changefreq: "weekly", priority: "0.8" },
+  { path: "/contests", changefreq: "weekly", priority: "0.7" },
+  { path: "/community", changefreq: "monthly", priority: "0.6" },
+  { path: "/faq", changefreq: "monthly", priority: "0.6" },
+  { path: "/contact", changefreq: "monthly", priority: "0.6" },
+  { path: "/privacy", changefreq: "yearly", priority: "0.3" },
+  { path: "/terms", changefreq: "yearly", priority: "0.3" },
 ];
+
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
