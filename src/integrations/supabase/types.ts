@@ -536,12 +536,10 @@ export type Database = {
           is_suspended: boolean
           notification_preferences: Json
           phone: string | null
-          phone_verified: boolean
           preferred_language: string
           role: string
           school: string | null
           theme_preference: string
-          wa_verify_code: string | null
         }
         Insert: {
           created_at?: string
@@ -556,12 +554,10 @@ export type Database = {
           is_suspended?: boolean
           notification_preferences?: Json
           phone?: string | null
-          phone_verified?: boolean
           preferred_language?: string
           role?: string
           school?: string | null
           theme_preference?: string
-          wa_verify_code?: string | null
         }
         Update: {
           created_at?: string
@@ -576,12 +572,10 @@ export type Database = {
           is_suspended?: boolean
           notification_preferences?: Json
           phone?: string | null
-          phone_verified?: boolean
           preferred_language?: string
           role?: string
           school?: string | null
           theme_preference?: string
-          wa_verify_code?: string | null
         }
         Relationships: []
       }

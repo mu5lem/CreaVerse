@@ -1,16 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { parsePhoneNumberFromString, isValidPhoneNumber } from "libphonenumber-js";
 import { BookLogo } from "@/components/BookLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { brand } from "@/lib/brand";
-import { Info, Mail, Phone, ShieldCheck, MessageCircle } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { registerPhoneAccount } from "@/lib/account.functions";
+import { Info, MailCheck } from "lucide-react";
+
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
@@ -39,26 +37,12 @@ const roleHome = {
   admin: "/admin/dashboard",
 } as const;
 
-type Method = "email" | "phone";
-
-// Normalize a phone into E.164, then convert to a synthetic email so we can
-// use Supabase's built-in email/password auth (avoids paid SMS gateways).
-function phoneToSyntheticEmail(e164: string) {
-  return `${e164.replace(/[^0-9]/g, "")}@phone.creaverse.local`;
-}
-
-function generateWaCode() {
-  const n = Math.floor(1000 + Math.random() * 9000);
-  return `CV-${n}`;
-}
-
 function AuthPage() {
   const { mode = "signin" } = Route.useSearch();
   const isSignup = mode === "signup";
   const navigate = useNavigate();
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
 
-  const [method, setMethod] = useState<Method>("email");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,35 +50,24 @@ function AuthPage() {
   const [gender, setGender] = useState("");
   const [school, setSchool] = useState("");
   const [noSchool, setNoSchool] = useState(false);
-  const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSending, setForgotSending] = useState(false);
 
-  // Email OTP verify state (6-digit code sent by Supabase confirmation email)
-  const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
-  const [emailVerifyEmail, setEmailVerifyEmail] = useState("");
-  const [pendingEmailProfile, setPendingEmailProfile] = useState<{ fullName: string; gender: string | null; school: string | null } | null>(null);
-  const [emailOtp, setEmailOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  // "Check your inbox" state — Supabase sends a confirmation link, not a code.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [resendIn, setResendIn] = useState(0);
-  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const registerPhone = useServerFn(registerPhoneAccount);
-
-  // WhatsApp handshake state
-  const [waOpen, setWaOpen] = useState(false);
-  const [waPhone, setWaPhone] = useState(""); // E.164
-  const [waCode, setWaCode] = useState("");
-  const [waUserId, setWaUserId] = useState<string | null>(null);
-  const [waConfirmCode, setWaConfirmCode] = useState("");
-  const [waSent, setWaSent] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     if (resendIn <= 0) return;
     const t = setInterval(() => setResendIn((n) => (n > 0 ? n - 1 : 0)), 1000);
     return () => clearInterval(t);
   }, [resendIn]);
+
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,14 +88,14 @@ function AuthPage() {
     // If the profile row hasn't materialised yet (Google sign-in + auth trigger race),
     // send them to the default student dashboard — ProtectedRoute will rehome them
     // to the right role page once the profile loads.
-    if (waOpen || emailVerifyOpen) return;
+    if (confirmOpen) return;
     if (profile) {
-      if (profile.phone && (profile as any).phone_verified === false) return;
       navigate({ to: roleHome[profile.role] });
     } else if (user && !authLoading) {
       navigate({ to: roleHome.student });
     }
-  }, [authLoading, user, profile, navigate, waOpen, emailVerifyOpen]);
+  }, [authLoading, user, profile, navigate, confirmOpen]);
+
 
 
   const handleGoogle = async () => {
@@ -140,24 +113,6 @@ function AuthPage() {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
     } finally {
       setGoogleLoading(false);
-    }
-  };
-
-  // Strict E.164 validation. Accepts local Pakistani 03xx… and normalizes to +92.
-  const validatePhone = (raw: string): string | null => {
-    const trimmed = raw.trim().replace(/[\s-()]/g, "");
-    // Handle local PK: 03xxxxxxxxx -> +923xxxxxxxxx
-    const candidate = /^0[3]\d{9}$/.test(trimmed)
-      ? `+92${trimmed.slice(1)}`
-      : trimmed.startsWith("+")
-      ? trimmed
-      : `+${trimmed}`;
-    try {
-      if (!isValidPhoneNumber(candidate)) return null;
-      const parsed = parsePhoneNumberFromString(candidate);
-      return parsed?.number || null;
-    } catch {
-      return null;
     }
   };
 
@@ -185,14 +140,12 @@ function AuthPage() {
           .insert({ id: uid, email, role: "student", full_name: fullName.trim(), ...profileExtras() });
         if (pErr && pErr.code !== "23505") throw pErr;
       }
-      // If email confirmation is required, user isn't fully signed in yet -> show 6-digit UI.
+      // Email confirmation required: Supabase mails a confirmation LINK.
       if (!data.session) {
-        setEmailVerifyEmail(email);
-        setPendingEmailProfile({ fullName: fullName.trim(), gender: gender || null, school: noSchool ? null : school.trim() || null });
-        setEmailOtp(["", "", "", "", "", ""]);
-        setEmailVerifyOpen(true);
+        setConfirmEmail(email);
+        setConfirmOpen(true);
         setResendIn(60);
-        toast.success("We sent a 6-digit code to your email.");
+        toast.success("Confirmation link sent — check your inbox.");
         return;
       }
       toast.success(`Account created — welcome to ${brand.name}!`);
@@ -202,50 +155,6 @@ function AuthPage() {
       toast.success("Welcome back!");
     }
     await refreshProfile();
-  };
-
-  // Phone auth uses password (like email), with WhatsApp handshake lock as the
-  // "did this human actually have this number" gate on signup.
-  const handlePhone = async () => {
-    const p = validatePhone(phone);
-    if (!p) {
-      toast.error("Your number is incorrect. Please enter a valid international WhatsApp phone number.");
-      throw new Error("invalid-phone");
-    }
-    const syntheticEmail = phoneToSyntheticEmail(p);
-    if (isSignup) {
-      if (!fullName.trim()) throw new Error("Please enter your full name");
-      if (password.length < 6) throw new Error("Password must be at least 6 characters");
-      const code = generateWaCode();
-      const created = await registerPhone({
-        data: {
-          syntheticEmail,
-          password,
-          fullName: fullName.trim(),
-          phone: p,
-          waCode: code,
-          gender: gender || null,
-          school: noSchool ? null : school.trim() || null,
-        },
-      });
-      if (!created.ok) throw new Error("Could not create account");
-      await supabase.auth.signInWithPassword({ email: syntheticEmail, password });
-      setWaPhone(p);
-      setWaCode(code);
-      setWaUserId(created.userId);
-      setWaSent(false);
-      setWaConfirmCode("");
-      setWaOpen(true);
-      await refreshProfile();
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: syntheticEmail,
-        password,
-      });
-      if (error) throw new Error("Invalid phone number or password");
-      toast.success("Welcome back!");
-      await refreshProfile();
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -259,125 +168,22 @@ function AuthPage() {
     try {
       await handleEmail();
     } catch (err) {
-      if (!(err instanceof Error) || err.message !== "invalid-phone") {
-        toast.error(err instanceof Error ? err.message : "Authentication failed");
-      }
+      toast.error(err instanceof Error ? err.message : "Authentication failed");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const switchMethod = (m: Method) => setMethod(m);
-
-  // ================= Email 6-digit OTP verify =================
-  const setOtpDigit = (i: number, v: string) => {
-    const digit = v.replace(/\D/g, "").slice(-1);
-    setEmailOtp((prev) => {
-      const next = [...prev];
-      next[i] = digit;
-      return next;
-    });
-    if (digit && i < 5) otpRefs.current[i + 1]?.focus();
-  };
-  const onOtpKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !emailOtp[i] && i > 0) {
-      otpRefs.current[i - 1]?.focus();
-    }
-  };
-  const onOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const t = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!t) return;
-    e.preventDefault();
-    const next = ["", "", "", "", "", ""];
-    for (let i = 0; i < t.length; i++) next[i] = t[i];
-    setEmailOtp(next);
-    otpRefs.current[Math.min(t.length, 5)]?.focus();
-  };
-  const verifyEmailOtp = async () => {
-    const token = emailOtp.join("");
-    if (token.length !== 6) return toast.error("Enter the 6-digit code");
-    const { error } = await supabase.auth.verifyOtp({
-      email: emailVerifyEmail,
-      token,
-      type: "signup",
-    });
-    if (error) return toast.error(error.message);
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (uid && pendingEmailProfile) {
-      const { error: pErr } = await supabase.from("profiles").upsert({
-        id: uid,
-        email: emailVerifyEmail,
-        role: "student",
-        full_name: pendingEmailProfile.fullName,
-        gender: pendingEmailProfile.gender,
-        school: pendingEmailProfile.school,
-      });
-      if (pErr) return toast.error(pErr.message);
-    }
-    toast.success("Email verified. Welcome!");
-    setEmailVerifyOpen(false);
-    setPendingEmailProfile(null);
-    await refreshProfile();
-  };
-  const resendEmailOtp = async () => {
-    if (resendIn > 0) return;
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: emailVerifyEmail,
-    });
+  const resendConfirmation = async () => {
+    if (resendIn > 0 || resending) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: confirmEmail });
+    setResending(false);
     if (error) return toast.error(error.message);
     setResendIn(60);
-    toast.success("Code resent");
+    toast.success("Confirmation link sent again");
   };
 
-  // ================= WhatsApp handshake lock =================
-  const waHref = useMemo(() => {
-    if (!waPhone || !waCode) return "#";
-    const digits = waPhone.replace(/[^0-9]/g, "");
-    const text = encodeURIComponent(
-      `${waCode} — verify my CreaVerse account. Please do not change this message.`,
-    );
-    return `https://wa.me/${digits}?text=${text}`;
-  }, [waPhone, waCode]);
-
-  // Realtime listener: if a background webhook ever flips phone_verified we release the lock.
-  useEffect(() => {
-    if (!waOpen || !waUserId) return;
-    const ch = supabase
-      .channel(`profile-${waUserId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${waUserId}` },
-        (payload: any) => {
-          if (payload?.new?.phone_verified === true) {
-            setWaOpen(false);
-            refreshProfile();
-          }
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [waOpen, waUserId, refreshProfile]);
-
-  const confirmWaHandshake = async () => {
-    if (!waUserId) return;
-    const entered = waConfirmCode.trim().toUpperCase();
-    if (entered !== waCode.toUpperCase()) {
-      toast.error("Code doesn't match. Send the exact code shown above through WhatsApp.");
-      return;
-    }
-    const { error } = await supabase
-      .from("profiles")
-      .update({ phone_verified: true, wa_verify_code: null })
-      .eq("id", waUserId);
-    if (error) return toast.error(error.message);
-    toast.success("Number verified. Welcome to CreaVerse!");
-    setWaOpen(false);
-    await refreshProfile();
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -611,61 +417,53 @@ function AuthPage() {
         </div>
       )}
 
-      {/* ============ Email 6-digit OTP dialog ============ */}
-      {emailVerifyOpen && (
+      {/* ============ Confirm-your-email (link) dialog ============ */}
+      {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="animate-pop-in w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
-            <div className="mb-4 flex items-center gap-3">
-              <BookLogo size={40} className="text-[var(--color-ink)] animate-pulse" />
-              <div>
-                <h3 className="font-display text-xl text-foreground">Verify your email</h3>
-                <p className="text-xs text-muted-foreground">
-                  We sent a 6-digit code to <strong>{emailVerifyEmail}</strong>
+            <div className="mb-4 flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--color-ember)]/10">
+                <MailCheck className="h-5 w-5 text-[var(--color-ember)]" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-display text-xl text-foreground">Confirm your email</h3>
+                <p className="mt-1 break-words text-sm text-muted-foreground">
+                  We sent a confirmation link to <strong className="text-foreground">{confirmEmail}</strong>.
+                  Open that email and tap the link to activate your account, then come back and sign in.
                 </p>
               </div>
             </div>
-            <div className="mt-2 flex justify-between gap-2">
-              {emailOtp.map((d, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { otpRefs.current[i] = el; }}
-                  value={d}
-                  onChange={(e) => setOtpDigit(i, e.target.value)}
-                  onKeyDown={(e) => onOtpKey(i, e)}
-                  onPaste={onOtpPaste}
-                  inputMode="numeric"
-                  maxLength={1}
-                  className="h-14 w-11 rounded-lg border border-input bg-background text-center text-2xl font-semibold text-foreground outline-none focus:border-[var(--color-ember)] focus:ring-2 focus:ring-[var(--color-ember)]/20"
-                />
-              ))}
-            </div>
+            <p className="rounded-lg border border-border bg-[var(--color-parchment)]/50 p-3 text-xs text-muted-foreground">
+              Can't find it? Check your spam or promotions folder — the link expires after a while.
+            </p>
             <button
               type="button"
-              onClick={verifyEmailOtp}
+              onClick={() => { setConfirmOpen(false); navigate({ to: "/auth", search: { mode: "signin" } }); }}
               className="press mt-5 w-full rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
             >
-              Verify & continue
+              Got it — back to sign in
             </button>
-            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <button
                 type="button"
-                onClick={resendEmailOtp}
-                disabled={resendIn > 0}
+                onClick={resendConfirmation}
+                disabled={resendIn > 0 || resending}
                 className="underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50 disabled:no-underline"
               >
-                {resendIn > 0 ? `Resend code in ${resendIn}s` : "Resend code"}
+                {resendIn > 0 ? `Resend link in ${resendIn}s` : resending ? "Sending…" : "Resend link"}
               </button>
               <button
                 type="button"
-                onClick={() => setEmailVerifyOpen(false)}
+                onClick={() => setConfirmOpen(false)}
                 className="hover:text-foreground"
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
+
 
     </div>
   );
