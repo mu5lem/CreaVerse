@@ -59,7 +59,7 @@ function AboutPage() {
             <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-parchment)]">
               <Sparkles className="h-5 w-5 text-[var(--color-ember)]" />
             </div>
-            <h3 className="font-display text-lg text-foreground">Our Motto</h3>
+            <h2 className="font-display text-lg text-foreground">Our Motto</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               <em className="not-italic font-semibold text-foreground">Learn. Visualize. Build.</em>
               {" "}Three verbs, one promise — knowledge should feel alive, and every learner
@@ -70,7 +70,7 @@ function AboutPage() {
             <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-parchment)]">
               <Heart className="h-5 w-5 text-[var(--color-ember)]" />
             </div>
-            <h3 className="font-display text-lg text-foreground">Our Slogan</h3>
+            <h2 className="font-display text-lg text-foreground">Our Slogan</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               <em className="not-italic font-semibold text-foreground">
                 Education for Everyone — a learning universe for every child.

@@ -86,7 +86,7 @@ function AcademyPage() {
                         className="group flex flex-col rounded-xl border border-border bg-card p-4 transition hover:border-[var(--color-ember)] hover:shadow-md"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-medium text-foreground group-hover:text-[var(--color-ember)]">{m.title}</h4>
+                          <h3 className="font-medium text-foreground group-hover:text-[var(--color-ember)]">{m.title}</h3>
                           <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-[var(--color-ember)]" />
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>
