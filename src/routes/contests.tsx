@@ -103,7 +103,7 @@ function ContestsPage() {
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">No contests match your filters.</div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 stagger-children">
             {filtered.map((c) => (
               <a
                 key={c.id}

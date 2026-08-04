@@ -53,7 +53,7 @@ function CommunityPage() {
             We only link to established, publicly-accessible pages — no private invites.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 stagger-children">
           {COMMUNITIES.map((c) => (
             <a key={c.name} href={c.url} target="_blank" rel="noreferrer"
               className="group flex items-start justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-[var(--color-ember)]/60">
