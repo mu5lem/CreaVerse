@@ -1,16 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { parsePhoneNumberFromString, isValidPhoneNumber } from "libphonenumber-js";
 import { BookLogo } from "@/components/BookLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { brand } from "@/lib/brand";
-import { Info, Mail, Phone, ShieldCheck, MessageCircle } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { registerPhoneAccount } from "@/lib/account.functions";
+import { Info, MailCheck } from "lucide-react";
+
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
