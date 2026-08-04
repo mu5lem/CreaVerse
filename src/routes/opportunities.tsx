@@ -95,7 +95,7 @@ function OpportunityHub() {
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">No results.</div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 stagger-children">
             {filtered.map((o) => (
               <a key={o.id} href={o.link} target="_blank" rel="noopener noreferrer" className="group rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-[var(--color-ember)]/60">
                 <div className="flex items-center gap-2">

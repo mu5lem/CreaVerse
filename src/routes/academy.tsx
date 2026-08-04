@@ -76,7 +76,7 @@ function AcademyPage() {
                   <ChevronDown className={`h-5 w-5 text-muted-foreground transition ${isOpen ? "rotate-180" : ""}`} />
                 </button>
                 {isOpen && (
-                  <div className="grid gap-3 border-t border-border bg-[var(--color-parchment)]/40 p-6 sm:grid-cols-2">
+                  <div className="grid gap-3 border-t border-border bg-[var(--color-parchment)]/40 p-6 sm:grid-cols-2 stagger-children">
                     {cat.modules.map((m, i) => (
                       <a
                         key={i}
@@ -105,7 +105,7 @@ function AcademyPage() {
         <section className="mt-12">
           <h2 className="font-display text-2xl font-semibold text-foreground">More Free Resources</h2>
           <p className="mt-1 text-sm text-muted-foreground">Hand-picked external sites — we link out, we don't reproduce their content.</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 stagger-children">
             {[
               { name: "ParhloBhai", url: "https://parhlobhai.vercel.app/", desc: "Free O/A Levels, IGCSE, Matric and Intermediate notes and past papers (Pakistan-focused)." },
               { name: "Khan Academy", url: "https://www.khanacademy.org", desc: "World-class free lessons in math, science, coding, economics and more — for any level." },
