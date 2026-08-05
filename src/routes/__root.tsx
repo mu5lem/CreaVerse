@@ -17,6 +17,7 @@ import { brand } from "../lib/brand";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { ConfirmProvider } from "../components/ConfirmDialog";
 import { OnboardingGate } from "../components/OnboardingGate";
+import { registerServiceWorker } from "../lib/register-sw";
 
 
 function NotFoundComponent() {
@@ -95,11 +96,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:site_name", content: brand.name },
+      { name: "theme-color", content: "#1a1f3d" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: brand.name },
+      { name: "application-name", content: brand.name },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "apple-touch-icon", href: "/favicon.svg" },
+      { rel: "icon", href: "/pwa-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: "/pwa-192.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -164,30 +172,7 @@ function RootComponent() {
       /* ignore */
     }
 
-
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-    const h = window.location.hostname;
-    const isPreview =
-      h.startsWith("id-preview--") ||
-      h.startsWith("preview--") ||
-      h === "lovableproject.com" ||
-      h.endsWith(".lovableproject.com") ||
-      h === "lovableproject-dev.com" ||
-      h.endsWith(".lovableproject-dev.com") ||
-      h === "beta.lovable.dev" ||
-      h.endsWith(".beta.lovable.dev");
-    const inIframe = window.self !== window.top;
-    const killSwitch = new URL(window.location.href).searchParams.get("sw") === "off";
-
-    if (!import.meta.env.PROD || isPreview || inIframe || killSwitch) {
-      navigator.serviceWorker.getRegistrations?.().then((regs) => {
-        regs.forEach((r) => {
-          if (r.active?.scriptURL.endsWith("/sw.js")) r.unregister();
-        });
-      }).catch(() => {});
-      return;
-    }
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+    registerServiceWorker();
   }, []);
 
   return (
