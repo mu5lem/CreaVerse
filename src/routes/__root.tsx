@@ -17,6 +17,7 @@ import { brand } from "../lib/brand";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { ConfirmProvider } from "../components/ConfirmDialog";
 import { OnboardingGate } from "../components/OnboardingGate";
+import { registerServiceWorker } from "../lib/register-sw";
 
 
 function NotFoundComponent() {
@@ -171,30 +172,7 @@ function RootComponent() {
       /* ignore */
     }
 
-
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-    const h = window.location.hostname;
-    const isPreview =
-      h.startsWith("id-preview--") ||
-      h.startsWith("preview--") ||
-      h === "lovableproject.com" ||
-      h.endsWith(".lovableproject.com") ||
-      h === "lovableproject-dev.com" ||
-      h.endsWith(".lovableproject-dev.com") ||
-      h === "beta.lovable.dev" ||
-      h.endsWith(".beta.lovable.dev");
-    const inIframe = window.self !== window.top;
-    const killSwitch = new URL(window.location.href).searchParams.get("sw") === "off";
-
-    if (!import.meta.env.PROD || isPreview || inIframe || killSwitch) {
-      navigator.serviceWorker.getRegistrations?.().then((regs) => {
-        regs.forEach((r) => {
-          if (r.active?.scriptURL.endsWith("/sw.js")) r.unregister();
-        });
-      }).catch(() => {});
-      return;
-    }
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+    registerServiceWorker();
   }, []);
 
   return (
