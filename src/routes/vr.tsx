@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
@@ -19,6 +19,7 @@ function VRPage() {
   const { profile, signOut } = useAuth();
   const [active, setActive] = useState<VRTopic | null>(null);
   const [split, setSplit] = useState(false);
+  const timeRef = useRef(0);
   if (!profile) return null;
 
   return (
@@ -101,8 +102,8 @@ function VRPage() {
               </div>
             </div>
             <div className={`flex-1 gap-4 ${split ? "grid grid-cols-2" : "grid grid-cols-1"}`}>
-              <VRScene topic={active} />
-              {split && <VRScene topic={active} />}
+              <VRScene topic={active} primary onTime={(t) => { timeRef.current = t; }} />
+              {split && <VRScene topic={active} startAt={Math.max(0, Math.floor(timeRef.current))} muted />}
             </div>
             <p className="mt-4 text-center text-sm text-white/70">{active.description} · via {active.source}</p>
           </div>
@@ -112,11 +113,70 @@ function VRPage() {
   );
 }
 
-function VRScene({ topic }: { topic: VRTopic }) {
-  const src = `https://www.youtube.com/embed/${topic.youtubeId}?rel=0&modestbranding=1&playsinline=1`;
+function VRScene({
+  topic,
+  primary = false,
+  muted = false,
+  startAt,
+  onTime,
+}: {
+  topic: VRTopic;
+  primary?: boolean;
+  muted?: boolean;
+  startAt?: number;
+  onTime?: (seconds: number) => void;
+}) {
+  const frameRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Track playback position of the primary player so a newly opened
+  // split-view pane can start from the same moment.
+  useEffect(() => {
+    if (!primary) return;
+    const win = frameRef.current?.contentWindow;
+    const ping = () => {
+      frameRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: "listening", id: topic.id }),
+        "*"
+      );
+    };
+    const onMessage = (e: MessageEvent) => {
+      if (typeof e.data !== "string") return;
+      if (!e.origin.includes("youtube")) return;
+      try {
+        const parsed = JSON.parse(e.data) as { info?: { currentTime?: number } };
+        const t = parsed?.info?.currentTime;
+        if (typeof t === "number" && Number.isFinite(t)) onTime?.(t);
+      } catch {
+        /* ignore non-JSON messages */
+      }
+    };
+    window.addEventListener("message", onMessage);
+    const interval = setInterval(ping, 500);
+    ping();
+    void win;
+    return () => {
+      window.removeEventListener("message", onMessage);
+      clearInterval(interval);
+    };
+  }, [primary, topic.id, onTime]);
+
+  const params = new URLSearchParams({
+    rel: "0",
+    modestbranding: "1",
+    playsinline: "1",
+    enablejsapi: "1",
+  });
+  if (startAt && startAt > 0) {
+    params.set("start", String(startAt));
+    params.set("autoplay", "1");
+  }
+  if (muted) params.set("mute", "1");
+  const src = `https://www.youtube.com/embed/${topic.youtubeId}?${params.toString()}`;
+
   return (
     <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black">
       <iframe
+        ref={frameRef}
         src={src}
         title={topic.title}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
