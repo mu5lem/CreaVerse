@@ -19,6 +19,7 @@ function VRPage() {
   const { profile, signOut } = useAuth();
   const [active, setActive] = useState<VRTopic | null>(null);
   const [split, setSplit] = useState(false);
+  const timeRef = useRef(0);
   if (!profile) return null;
 
   return (
