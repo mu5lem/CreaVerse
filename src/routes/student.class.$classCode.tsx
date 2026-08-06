@@ -231,6 +231,7 @@ function StudentClass() {
           file_url: null,
           answers: JSON.parse(JSON.stringify(answers)),
           obtained_marks: earned,
+          percentage: percent,
           grade: percent !== null ? String(percent) : null,
           submitted_at: new Date().toISOString(),
         },

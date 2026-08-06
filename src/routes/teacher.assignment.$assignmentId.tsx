@@ -6,6 +6,16 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { QuizGradePanel } from "@/components/QuizGradePanel";
+import {
+  MARKS_KEY,
+  defaultMarks,
+  splitAnswers,
+  totalPoints,
+  type AnswerMap,
+  type MarkMap,
+  type Question,
+} from "@/lib/quiz-types";
 
 export const Route = createFileRoute("/teacher/assignment/$assignmentId")({
   component: () => (
@@ -22,6 +32,9 @@ interface Assignment {
   description: string | null;
   media_url: string | null;
   due_date: string | null;
+  assignment_kind: string;
+  questions: Question[] | null;
+  total_marks: number | null;
 }
 interface Submission {
   id: string;
@@ -31,6 +44,9 @@ interface Submission {
   grade: string | null;
   feedback: string | null;
   submitted_at: string;
+  answers: unknown;
+  obtained_marks: number | null;
+  percentage: number | null;
   student_email?: string | null;
 }
 
@@ -40,7 +56,7 @@ function AssignmentGrading() {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [subs, setSubs] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [drafts, setDrafts] = useState<Record<string, { grade: string; feedback: string }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { grade: string; feedback: string; marks: MarkMap }>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
   const openFile = async (path: string) => {
@@ -68,8 +84,21 @@ function AssignmentGrading() {
       list.forEach((x) => (x.student_email = emails.get(x.student_id) ?? null));
     }
     setSubs(list);
+    const qs = ((a as Assignment | null)?.questions ?? []) as Question[];
     setDrafts(
-      Object.fromEntries(list.map((x) => [x.id, { grade: x.grade ?? "", feedback: x.feedback ?? "" }])),
+      Object.fromEntries(
+        list.map((x) => {
+          const { answers, marks } = splitAnswers(x.answers);
+          return [
+            x.id,
+            {
+              grade: x.grade ?? "",
+              feedback: x.feedback ?? "",
+              marks: qs.length > 0 ? defaultMarks(qs, answers, marks) : {},
+            },
+          ];
+        }),
+      ),
     );
     setLoading(false);
   }, [assignmentId]);
@@ -92,9 +121,55 @@ function AssignmentGrading() {
     return normalized;
   };
 
+  const isQuiz = (assignment?.questions?.length ?? 0) > 0;
+  const quizQuestions = (assignment?.questions ?? []) as Question[];
+  const quizTotal = totalPoints(quizQuestions);
+
+  const quizResult = (id: string) => {
+    const marks = drafts[id]?.marks ?? {};
+    const obtained = quizQuestions.reduce((acc, q) => acc + (marks[q.id] ?? 0), 0);
+    const percent = quizTotal > 0 ? Math.round((obtained / quizTotal) * 1000) / 10 : 0;
+    const unchecked = quizQuestions.filter((q) => marks[q.id] === undefined).length;
+    return { obtained, percent, unchecked, marks };
+  };
+
   const saveGrade = async (id: string) => {
     const d = drafts[id];
     if (!d) return;
+
+    if (isQuiz) {
+      const { obtained, percent, unchecked, marks } = quizResult(id);
+      if (unchecked > 0) {
+        return toast.error(`Mark all questions first — ${unchecked} still unchecked.`);
+      }
+      const sub = subs.find((x) => x.id === id);
+      const { answers } = splitAnswers(sub?.answers);
+      const answersBlob = { ...answers, [MARKS_KEY]: marks } as Record<string, unknown>;
+      setSaving(id);
+      const { error } = await supabase
+        .from("submissions")
+        .update({
+          answers: JSON.parse(JSON.stringify(answersBlob)),
+          obtained_marks: obtained,
+          percentage: percent,
+          grade: String(percent),
+          feedback: d.feedback || null,
+        })
+        .eq("id", id);
+      setSaving(null);
+      if (error) return toast.error(error.message);
+      toast.success(`Saved — ${obtained}/${quizTotal} (${percent}%)`);
+      setSubs((prev) =>
+        prev.map((x) =>
+          x.id === id
+            ? { ...x, answers: answersBlob, obtained_marks: obtained, percentage: percent, grade: String(percent), feedback: d.feedback || null }
+            : x,
+        ),
+      );
+      setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], grade: String(percent) } }));
+      return;
+    }
+
     // Normalise grade to a plain number string (percent) or null
     const gradeTrim = d.grade.trim();
     let gradeToSave: string | null = null;
@@ -108,7 +183,7 @@ function AssignmentGrading() {
     setSaving(id);
     const { error } = await supabase
       .from("submissions")
-      .update({ grade: gradeToSave, feedback: d.feedback || null })
+      .update({ grade: gradeToSave, percentage: gradeToSave === null ? null : parseFloat(gradeToSave), feedback: d.feedback || null })
       .eq("id", id)
       .select()
       .single();
@@ -116,12 +191,17 @@ function AssignmentGrading() {
     if (error) return toast.error(error.message);
     toast.success("Remarks saved");
     setSubs((prev) => prev.map((x) => (x.id === id ? { ...x, grade: gradeToSave, feedback: d.feedback || null } : x)));
-    setDrafts((prev) => ({ ...prev, [id]: { grade: gradeToSave ?? "", feedback: d.feedback ?? "" } }));
+    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], grade: gradeToSave ?? "", feedback: d.feedback ?? "" } }));
   };
 
   const isSaved = (s: Submission): boolean => {
     const d = drafts[s.id];
     if (!d) return false;
+    if (isQuiz) {
+      const { percent, unchecked } = quizResult(s.id);
+      if (unchecked > 0) return false;
+      return s.grade !== null && parseFloat(s.grade) === percent && (s.feedback ?? "") === d.feedback;
+    }
     const savedGrade = s.grade ?? "";
     const savedFeedback = s.feedback ?? "";
     const hasAny = savedGrade !== "" || savedFeedback !== "";
@@ -196,7 +276,24 @@ function AssignmentGrading() {
                         Open submission file
                       </button>
                     )}
+                    {isQuiz && (
+                      <div className="mb-4">
+                        <QuizGradePanel
+                          questions={quizQuestions}
+                          answers={splitAnswers(s.answers).answers as AnswerMap}
+                          marks={drafts[s.id]?.marks ?? {}}
+                          onChange={(marks) =>
+                            setDrafts({ ...drafts, [s.id]: { ...drafts[s.id], marks } })
+                          }
+                        />
+                      </div>
+                    )}
                     <div className="grid gap-3 sm:grid-cols-[140px_1fr_auto]">
+                      {isQuiz ? (
+                        <div className="flex items-center justify-center rounded-lg border border-border bg-[var(--color-parchment)] px-3 py-2 text-sm font-medium text-foreground">
+                          {quizResult(s.id).percent}%
+                        </div>
+                      ) : (
                       <div className="relative">
                         <input
                           inputMode="decimal"
@@ -214,6 +311,7 @@ function AssignmentGrading() {
                           %
                         </span>
                       </div>
+                      )}
                       <input
                         placeholder="Feedback"
                         value={drafts[s.id]?.feedback ?? ""}
