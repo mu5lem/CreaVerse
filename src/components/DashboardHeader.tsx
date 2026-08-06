@@ -59,13 +59,26 @@ export function DashboardHeader({
             Settings
           </Link>
           <FeedbackButton />
-          <button
-            onClick={onSignOut}
-            className="press rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-4"
-          >
-            <span className="sm:hidden">Exit</span>
-            <span className="hidden sm:inline">Sign out</span>
-          </button>
+          {atHome ? (
+            <button
+              onClick={onSignOut}
+              aria-label="Sign out"
+              className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-4"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate({ to: home })}
+              aria-label="Exit to dashboard"
+              className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Exit</span>
+            </button>
+          )}
+
         </div>
       </div>
     </header>
