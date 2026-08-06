@@ -2,7 +2,14 @@ import { brand } from "@/lib/brand";
 import { BookLogo } from "./BookLogo";
 import { FeedbackButton } from "./FeedbackButton";
 import { NotificationsBell } from "./NotificationsBell";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { LogOut, ArrowLeft } from "lucide-react";
+
+function homeFor(role: string) {
+  if (role === "teacher") return "/teacher/dashboard";
+  if (role === "admin") return "/admin/dashboard";
+  return "/student/dashboard";
+}
 
 export function DashboardHeader({
   title,
@@ -15,6 +22,13 @@ export function DashboardHeader({
   email: string;
   onSignOut: () => void;
 }) {
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const home = homeFor(role);
+  // On the user's home dashboard the action is "Sign out".
+  // Anywhere deeper (a feature or section) it becomes "Exit" back to home.
+  const atHome = pathname === home || pathname === `${home}/`;
+
   return (
     <header className="border-b border-border bg-[var(--color-parchment)]">
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:flex sm:justify-between sm:px-6 sm:py-6">
