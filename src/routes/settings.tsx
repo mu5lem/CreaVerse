@@ -178,13 +178,6 @@ function SettingsPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                <div className="mb-4 flex items-center gap-2"><Languages className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Language</h3></div>
-                <div className="inline-flex rounded-full border border-border bg-background p-1">
-                  <button type="button" onClick={() => setLanguage("en")} className={`rounded-full px-5 py-2 text-sm ${language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>English</button>
-                  <button type="button" onClick={() => setLanguage("ur")} className={`rounded-full px-5 py-2 text-sm ${language === "ur" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>اردو</button>
-                </div>
-              </section>
 
               <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="mb-4 flex items-center gap-2"><Bell className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Notifications</h3></div>
