@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bell, KeyRound, Languages, Moon, ShieldAlert, Trash2, UserCog } from "lucide-react";
+import { Bell, KeyRound, Moon, ShieldAlert, Trash2, UserCog } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { deleteCurrentAccount } from "@/lib/account.functions";
 
 type ThemePref = "system" | "light" | "dark";
-type LangPref = "en" | "ur";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -46,7 +45,6 @@ function SettingsPage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [theme, setTheme] = useState<ThemePref>("system");
-  const [language, setLanguage] = useState<LangPref>("en");
   const [prefs, setPrefs] = useState({ assignment: true, submission: true, grade: true });
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -61,11 +59,9 @@ function SettingsPage() {
     setPhone(profile.phone ?? "");
     const rawProfile = profile as typeof profile & {
       theme_preference?: ThemePref;
-      preferred_language?: LangPref;
       notification_preferences?: Partial<typeof prefs> | null;
     };
     setTheme(rawProfile.theme_preference ?? (localStorage.getItem("creaverse:theme") as ThemePref | null) ?? "system");
-    setLanguage(rawProfile.preferred_language ?? "en");
     setPrefs({ assignment: true, submission: true, grade: true, ...(rawProfile.notification_preferences ?? {}) });
   }, [profile]);
 
@@ -83,7 +79,6 @@ function SettingsPage() {
         full_name: fullName.trim() || null,
         phone: phone.trim() || null,
         theme_preference: theme,
-        preferred_language: language,
         notification_preferences: prefs,
       } as never)
       .eq("id", profile.id);
@@ -167,7 +162,7 @@ function SettingsPage() {
         <div className="grid gap-8">
           <div>
             <h2 className="mb-3 font-display text-2xl font-semibold text-foreground">General App Settings</h2>
-            <p className="mb-4 text-sm text-muted-foreground">Appearance, language, and notification preferences for the whole app.</p>
+            <p className="mb-4 text-sm text-muted-foreground">Appearance and notification preferences for the whole app.</p>
             <div className="grid gap-5">
               <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="mb-4 flex items-center gap-2"><Moon className="h-4 w-4 text-muted-foreground" /><h3 className="font-display text-xl text-foreground">Appearance</h3></div>
