@@ -111,76 +111,165 @@ function VRPage() {
   );
 }
 
-function VRScene({
-  topic,
-  primary = false,
-  muted = false,
-  startAt,
-  onTime,
-}: {
-  topic: VRTopic;
-  primary?: boolean;
-  muted?: boolean;
-  startAt?: number;
-  onTime?: (seconds: number) => void;
-}) {
-  const frameRef = useRef<HTMLIFrameElement | null>(null);
+type YTPlayer = {
+  getCurrentTime: () => number;
+  getPlayerState: () => number;
+  seekTo: (s: number, allow: boolean) => void;
+  playVideo: () => void;
+  pauseVideo: () => void;
+  mute: () => void;
+  destroy: () => void;
+};
+type YTNamespace = {
+  Player: new (el: HTMLElement, opts: Record<string, unknown>) => YTPlayer;
+};
 
-  // Track playback position of the primary player so a newly opened
-  // split-view pane can start from the same moment.
+function useYouTubeApi() {
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    if (!primary) return;
-    const win = frameRef.current?.contentWindow;
-    const ping = () => {
-      frameRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: "listening", id: topic.id }),
-        "*"
-      );
-    };
-    const onMessage = (e: MessageEvent) => {
-      if (typeof e.data !== "string") return;
-      if (!e.origin.includes("youtube")) return;
-      try {
-        const parsed = JSON.parse(e.data) as { info?: { currentTime?: number } };
-        const t = parsed?.info?.currentTime;
-        if (typeof t === "number" && Number.isFinite(t)) onTime?.(t);
-      } catch {
-        /* ignore non-JSON messages */
+    const w = window as unknown as { YT?: YTNamespace };
+    if (w.YT?.Player) {
+      setReady(true);
+      return;
+    }
+    if (!document.getElementById("yt-iframe-api")) {
+      const s = document.createElement("script");
+      s.id = "yt-iframe-api";
+      s.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(s);
+    }
+    const iv = setInterval(() => {
+      if ((window as unknown as { YT?: YTNamespace }).YT?.Player) {
+        setReady(true);
+        clearInterval(iv);
       }
-    };
-    window.addEventListener("message", onMessage);
-    const interval = setInterval(ping, 500);
-    ping();
-    void win;
-    return () => {
-      window.removeEventListener("message", onMessage);
-      clearInterval(interval);
-    };
-  }, [primary, topic.id, onTime]);
+    }, 150);
+    return () => clearInterval(iv);
+  }, []);
+  return ready;
+}
 
-  const params = new URLSearchParams({
-    rel: "0",
-    modestbranding: "1",
-    playsinline: "1",
-    enablejsapi: "1",
-  });
-  if (startAt && startAt > 0) {
-    params.set("start", String(startAt));
-    params.set("autoplay", "1");
-  }
-  if (muted) params.set("mute", "1");
-  const src = `https://www.youtube.com/embed/${topic.youtubeId}?${params.toString()}`;
+/**
+ * Primary + optional split pane, both driven by the YouTube IFrame API so the
+ * second pane always starts at — and stays locked to — the primary's timestamp.
+ */
+function VRPlayers({ topic, split }: { topic: VRTopic; split: boolean }) {
+  const apiReady = useYouTubeApi();
+  const primaryHost = useRef<HTMLDivElement | null>(null);
+  const secondHost = useRef<HTMLDivElement | null>(null);
+  const primaryRef = useRef<YTPlayer | null>(null);
+  const secondRef = useRef<YTPlayer | null>(null);
+  const timeRef = useRef(0);
+
+  const baseVars = {
+    rel: 0,
+    modestbranding: 1,
+    playsinline: 1,
+    enablejsapi: 1,
+  };
+
+  // Primary player
+  useEffect(() => {
+    if (!apiReady || !primaryHost.current) return;
+    const host = primaryHost.current;
+    const el = document.createElement("div");
+    host.appendChild(el);
+    const YT = (window as unknown as { YT: YTNamespace }).YT;
+    const player = new YT.Player(el, {
+      videoId: topic.youtubeId,
+      playerVars: baseVars,
+      events: {
+        onReady: () => {
+          primaryRef.current = player;
+        },
+      },
+    });
+    const iv = setInterval(() => {
+      try {
+        const t = player.getCurrentTime?.();
+        if (typeof t === "number" && Number.isFinite(t)) timeRef.current = t;
+      } catch {
+        /* player not ready yet */
+      }
+    }, 250);
+    return () => {
+      clearInterval(iv);
+      try {
+        player.destroy();
+      } catch {
+        /* already gone */
+      }
+      primaryRef.current = null;
+      host.innerHTML = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiReady, topic.youtubeId]);
+
+  // Split pane: created at the primary's exact position, then kept in lockstep
+  useEffect(() => {
+    if (!split || !apiReady || !secondHost.current) return;
+    const host = secondHost.current;
+    const el = document.createElement("div");
+    host.appendChild(el);
+    const startAt = Math.max(0, timeRef.current);
+    const YT = (window as unknown as { YT: YTNamespace }).YT;
+    const player = new YT.Player(el, {
+      videoId: topic.youtubeId,
+      playerVars: { ...baseVars, controls: 0, autoplay: 1, mute: 1, start: Math.floor(startAt) },
+      events: {
+        onReady: () => {
+          secondRef.current = player;
+          try {
+            player.mute();
+            player.seekTo(timeRef.current, true);
+            player.playVideo();
+          } catch {
+            /* ignore */
+          }
+        },
+      },
+    });
+
+    // Continuous drift correction + play/pause mirroring.
+    const sync = setInterval(() => {
+      const p = primaryRef.current;
+      const s = secondRef.current;
+      if (!p || !s) return;
+      try {
+        const pt = p.getCurrentTime();
+        const st = s.getCurrentTime();
+        if (Math.abs(pt - st) > 0.35) s.seekTo(pt, true);
+        const state = p.getPlayerState(); // 1 = playing, 2 = paused
+        if (state === 1 && s.getPlayerState() !== 1) s.playVideo();
+        if (state === 2 && s.getPlayerState() === 1) s.pauseVideo();
+      } catch {
+        /* ignore */
+      }
+    }, 400);
+
+    return () => {
+      clearInterval(sync);
+      try {
+        player.destroy();
+      } catch {
+        /* already gone */
+      }
+      secondRef.current = null;
+      host.innerHTML = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [split, apiReady, topic.youtubeId]);
 
   return (
-    <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black">
-      <iframe
-        ref={frameRef}
-        src={src}
-        title={topic.title}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        className="h-full w-full"
-      />
+    <div className={`flex-1 gap-4 ${split ? "grid grid-cols-2" : "grid grid-cols-1"}`}>
+      <div className="relative overflow-hidden rounded-2xl bg-black [&_iframe]:h-full [&_iframe]:w-full [&>div]:h-full [&>div]:w-full">
+        <div ref={primaryHost} className="h-full w-full" />
+      </div>
+      {split && (
+        <div className="relative overflow-hidden rounded-2xl bg-black [&_iframe]:h-full [&_iframe]:w-full [&>div]:h-full [&>div]:w-full">
+          <div ref={secondHost} className="h-full w-full" />
+        </div>
+      )}
     </div>
   );
 }
