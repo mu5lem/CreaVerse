@@ -81,3 +81,61 @@ export function autoScore(qs: Question[], answers: AnswerMap): { earned: number;
   }
   return { earned, possible, graded };
 }
+
+/** Reserved key used to persist the teacher's per-question marks inside submissions.answers. */
+export const MARKS_KEY = "__teacher_marks";
+export type MarkMap = Record<string, number>;
+
+/** Auto-verdict for a single question: true/false when a key exists, null when it needs manual review. */
+export function isAutoCorrect(q: Question, a: Answer | undefined): boolean | null {
+  if (q.kind === "mcq") {
+    if (q.correctIndex === null) return null;
+    return a?.kind === "mcq" && a.selectedIndex === q.correctIndex;
+  }
+  if (q.kind === "tf") {
+    if (q.correct === null) return null;
+    return a?.kind === "tf" && a.value !== null && a.value === q.correct;
+  }
+  if (q.answer && q.answer.trim()) {
+    return a?.kind === "short" && a.text.trim().toLowerCase() === q.answer.trim().toLowerCase();
+  }
+  return null;
+}
+
+/** Human-readable rendering of what the student answered. */
+export function answerText(q: Question, a: Answer | undefined): string {
+  if (!a) return "— no answer —";
+  if (q.kind === "mcq" && a.kind === "mcq")
+    return a.selectedIndex === null ? "— no answer —" : (q.options[a.selectedIndex] || `Option ${a.selectedIndex + 1}`);
+  if (q.kind === "tf" && a.kind === "tf")
+    return a.value === null ? "— no answer —" : a.value ? "True" : "False";
+  if (q.kind === "short" && a.kind === "short") return a.text.trim() || "— no answer —";
+  return "— no answer —";
+}
+
+/** Split the stored answers blob into real answers and the teacher's saved marks. */
+export function splitAnswers(raw: unknown): { answers: AnswerMap; marks: MarkMap } {
+  const obj = (raw ?? {}) as Record<string, unknown>;
+  const marks = (obj[MARKS_KEY] ?? {}) as MarkMap;
+  const answers: AnswerMap = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === MARKS_KEY) continue;
+    answers[k] = v as AnswerMap[string];
+  }
+  return { answers, marks };
+}
+
+/** Default marks a teacher starts from: full points when auto-correct, 0 when auto-wrong, unset when manual. */
+export function defaultMarks(qs: Question[], answers: AnswerMap, saved: MarkMap): MarkMap {
+  const out: MarkMap = {};
+  for (const q of qs) {
+    if (saved[q.id] !== undefined) {
+      out[q.id] = saved[q.id];
+      continue;
+    }
+    const verdict = isAutoCorrect(q, answers[q.id]);
+    if (verdict === true) out[q.id] = q.points;
+    else if (verdict === false) out[q.id] = 0;
+  }
+  return out;
+}
