@@ -101,10 +101,8 @@ function VRPage() {
                 </button>
               </div>
             </div>
-            <div className={`flex-1 gap-4 ${split ? "grid grid-cols-2" : "grid grid-cols-1"}`}>
-              <VRScene topic={active} primary onTime={(t) => { timeRef.current = t; }} />
-              {split && <VRScene topic={active} startAt={Math.max(0, Math.floor(timeRef.current))} muted />}
-            </div>
+            <VRPlayers topic={active} split={split} />
+
             <p className="mt-4 text-center text-sm text-white/70">{active.description} · via {active.source}</p>
           </div>
         )}
