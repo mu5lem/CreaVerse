@@ -6,6 +6,16 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { QuizGradePanel } from "@/components/QuizGradePanel";
+import {
+  MARKS_KEY,
+  defaultMarks,
+  splitAnswers,
+  totalPoints,
+  type AnswerMap,
+  type MarkMap,
+  type Question,
+} from "@/lib/quiz-types";
 
 export const Route = createFileRoute("/teacher/assignment/$assignmentId")({
   component: () => (
@@ -22,6 +32,9 @@ interface Assignment {
   description: string | null;
   media_url: string | null;
   due_date: string | null;
+  assignment_kind: string;
+  questions: Question[] | null;
+  total_marks: number | null;
 }
 interface Submission {
   id: string;
@@ -31,6 +44,9 @@ interface Submission {
   grade: string | null;
   feedback: string | null;
   submitted_at: string;
+  answers: unknown;
+  obtained_marks: number | null;
+  percentage: number | null;
   student_email?: string | null;
 }
 
@@ -40,7 +56,7 @@ function AssignmentGrading() {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [subs, setSubs] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [drafts, setDrafts] = useState<Record<string, { grade: string; feedback: string }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { grade: string; feedback: string; marks: MarkMap }>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
   const openFile = async (path: string) => {
@@ -68,8 +84,21 @@ function AssignmentGrading() {
       list.forEach((x) => (x.student_email = emails.get(x.student_id) ?? null));
     }
     setSubs(list);
+    const qs = ((a as Assignment | null)?.questions ?? []) as Question[];
     setDrafts(
-      Object.fromEntries(list.map((x) => [x.id, { grade: x.grade ?? "", feedback: x.feedback ?? "" }])),
+      Object.fromEntries(
+        list.map((x) => {
+          const { answers, marks } = splitAnswers(x.answers);
+          return [
+            x.id,
+            {
+              grade: x.grade ?? "",
+              feedback: x.feedback ?? "",
+              marks: qs.length > 0 ? defaultMarks(qs, answers, marks) : {},
+            },
+          ];
+        }),
+      ),
     );
     setLoading(false);
   }, [assignmentId]);
