@@ -7,7 +7,13 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 
+// On Vercel, build with Nitro's `vercel` preset so SSR runs as a Vercel
+// function (Build Output API v3 in `.vercel/output`). Lovable's own builds
+// keep their forced Cloudflare target — this override applies outside Lovable.
+const isVercelBuild = Boolean(process.env['VERCEL']);
+
 export default defineConfig({
+  ...(isVercelBuild ? { nitro: { preset: "vercel" } } : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
