@@ -102,13 +102,13 @@ function AuthPage() {
     if (googleLoading) return;
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
       });
-      if (result.error) throw result.error instanceof Error ? result.error : new Error(String(result.error));
-      if (result.redirected) return; // browser is navigating away
-      // Tokens set; refresh profile
-      await refreshProfile();
+      if (error) throw error;
+      // Supabase redirects the browser away for OAuth; nothing else to do here.
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
     } finally {
