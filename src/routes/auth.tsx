@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { BookLogo } from "@/components/BookLogo";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+
 import { useAuth } from "@/hooks/useAuth";
 import { brand } from "@/lib/brand";
 import { Info, MailCheck } from "lucide-react";
