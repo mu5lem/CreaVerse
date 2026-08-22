@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { brand } from "@/lib/brand";
 import { Flame, Sparkles, BookOpen, GraduationCap, TrendingUp, AlertCircle } from "lucide-react";
 import { DailyQuote } from "@/components/DailyQuote";
+import { VerificationGate, readPendingVerification, clearPendingVerification, type VerifyIntent } from "@/components/VerificationGate";
 
 export const Route = createFileRoute("/student/dashboard")({
   component: () => (
@@ -35,6 +36,25 @@ function StudentDashboard() {
   const [classes, setClasses] = useState<EnrolledClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [grades, setGrades] = useState<{ grade: string | null; class_code: string }[]>([]);
+  const [gateIntent, setGateIntent] = useState<VerifyIntent | null>(null);
+  const [gateVerified, setGateVerified] = useState(false);
+  const verified = profile?.email_verified === true;
+
+  // Returning from the Google verification redirect: mark verified, resume intent.
+  useEffect(() => {
+    const pending = readPendingVerification();
+    if (!pending || !user) return;
+    clearPendingVerification();
+    (async () => {
+      await supabase
+        .from("profiles")
+        .update({ email: user.email ?? profile?.email ?? "", email_verified: true })
+        .eq("id", user.id);
+      await refreshProfile();
+      setGateVerified(true);
+      setGateIntent(pending);
+    })();
+  }, [user, profile?.email, refreshProfile]);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -74,6 +94,7 @@ function StudentDashboard() {
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || joining) return;
+    if (!verified) { setGateVerified(false); setGateIntent("student"); return; }
     const code = classCode.trim().toUpperCase();
     if (!code) return;
     setJoining(true);
@@ -94,6 +115,7 @@ function StudentDashboard() {
 
   const handleUpgrade = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!verified) { setGateVerified(false); setGateIntent("teacher"); return; }
     if (!inviteCode.trim() || upgrading) return;
     setUpgrading(true);
     try {
@@ -318,6 +340,13 @@ function StudentDashboard() {
           </form>
         </div>
       </main>
+
+      <VerificationGate
+        intent={gateIntent ?? "student"}
+        open={gateIntent !== null}
+        startVerified={gateVerified}
+        onClose={() => { setGateIntent(null); setGateVerified(false); load(); }}
+      />
     </div>
   );
 }
