@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { useAuth } from "@/hooks/useAuth";
 import { brand } from "@/lib/brand";
-import { Info, MailCheck } from "lucide-react";
-
+import { resolveIdentifier } from "@/lib/identity";
+import { Info } from "lucide-react";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign In or Sign Up — CreaVerse" },
-      { name: "description", content: "Sign in or create a CreaVerse account with email or phone to access classes, AI mentorship, and opportunities." },
+      { name: "description", content: "Sign in or create a CreaVerse account with an email or username to access classes, AI mentorship, and opportunities." },
       { property: "og:title", content: "Sign In — CreaVerse" },
       { property: "og:description", content: "Access your CreaVerse learning account." },
       { property: "og:url", content: "/auth" },
@@ -44,30 +44,13 @@ function AuthPage() {
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
 
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [gender, setGender] = useState("");
-  const [school, setSchool] = useState("");
-  const [noSchool, setNoSchool] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSending, setForgotSending] = useState(false);
-
-  // "Check your inbox" state — Supabase sends a confirmation link, not a code.
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmEmail, setConfirmEmail] = useState("");
-  const [resendIn, setResendIn] = useState(0);
-  const [resending, setResending] = useState(false);
-
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    const t = setInterval(() => setResendIn((n) => (n > 0 ? n - 1 : 0)), 1000);
-    return () => clearInterval(t);
-  }, [resendIn]);
-
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,19 +67,12 @@ function AuthPage() {
   };
 
   useEffect(() => {
-    // Once we have a signed-in user, get them off the auth page immediately.
-    // If the profile row hasn't materialised yet (Google sign-in + auth trigger race),
-    // send them to the default student dashboard — ProtectedRoute will rehome them
-    // to the right role page once the profile loads.
-    if (confirmOpen) return;
     if (profile) {
       navigate({ to: roleHome[profile.role] });
     } else if (user && !authLoading) {
       navigate({ to: roleHome.student });
     }
-  }, [authLoading, user, profile, navigate, confirmOpen]);
-
-
+  }, [authLoading, user, profile, navigate]);
 
   const handleGoogle = async () => {
     if (googleLoading) return;
@@ -108,7 +84,6 @@ function AuthPage() {
       });
       if (error) throw error;
       // Supabase redirects the browser away for OAuth; nothing else to do here.
-
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
     } finally {
@@ -116,39 +91,29 @@ function AuthPage() {
     }
   };
 
-  const profileExtras = () => ({
-    gender: gender || null,
-    school: noSchool ? null : school.trim() || null,
-  });
-
   const handleEmail = async () => {
+    const { email, username } = resolveIdentifier(identifier);
+    if (!email || (username !== null && username.length < 3)) {
+      throw new Error("Enter an email or a username of at least 3 characters");
+    }
+
     if (isSignup) {
-      if (!fullName.trim()) throw new Error("Please enter your full name");
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: { full_name: fullName.trim() },
-        },
-      });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       const uid = data.user?.id;
       if (uid && data.session) {
-        const { error: pErr } = await supabase
+        // The auth trigger creates the profile row; attach the chosen username.
+        await supabase
           .from("profiles")
-          .insert({ id: uid, email, role: "student", full_name: fullName.trim(), ...profileExtras() });
-        if (pErr && pErr.code !== "23505") throw pErr;
+          .update({ username: username ?? null, email_verified: false })
+          .eq("id", uid);
       }
-      // Email confirmation required: Supabase mails a confirmation LINK.
       if (!data.session) {
-        setConfirmEmail(email);
-        setConfirmOpen(true);
-        setResendIn(60);
-        toast.success("Confirmation link sent — check your inbox.");
+        // Should not happen with instant sign-up, but stay graceful.
+        toast.success("Account created — please sign in.");
         return;
       }
-      toast.success(`Account created — welcome to ${brand.name}!`);
+      toast.success(`Welcome to ${brand.name}!`);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -174,17 +139,6 @@ function AuthPage() {
     }
   };
 
-  const resendConfirmation = async () => {
-    if (resendIn > 0 || resending) return;
-    setResending(true);
-    const { error } = await supabase.auth.resend({ type: "signup", email: confirmEmail });
-    setResending(false);
-    if (error) return toast.error(error.message);
-    setResendIn(60);
-    toast.success("Confirmation link sent again");
-  };
-
-
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8">
@@ -207,7 +161,7 @@ function AuthPage() {
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isSignup
-              ? `Join ${brand.name} as a student. You can upgrade later with a teacher invite code.`
+              ? `Two fields and you're in. Explore ${brand.name} right away.`
               : "Sign in to continue your learning journey."}
           </p>
         </div>
@@ -232,68 +186,17 @@ function AuthPage() {
           <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
         </div>
 
-
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
-          {isSignup && (
-            <>
-              <Field label="Full name">
-                <input
-                  type="text"
-                  required
-                  autoComplete="name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  maxLength={100}
-                  className={inputCls}
-                  placeholder="e.g. Muhammad Ali"
-                />
-              </Field>
-              <Field label="Gender">
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
-                </select>
-              </Field>
-              <Field label="Current School / College / Academy (optional)">
-                <input
-                  type="text"
-                  autoComplete="organization"
-                  value={school}
-                  onChange={(e) => setSchool(e.target.value)}
-                  disabled={noSchool}
-                  maxLength={150}
-                  className={inputCls}
-                  placeholder="e.g. Beaconhouse School System"
-                />
-                <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={noSchool}
-                    onChange={(e) => setNoSchool(e.target.checked)}
-                    className="h-4 w-4 rounded border-input"
-                  />
-                  I'm not currently enrolled anywhere
-                </label>
-              </Field>
-            </>
-          )}
-
-          <Field label="Email">
+          <Field label="Email or username">
             <input
-              type="email"
+              type="text"
               required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              maxLength={120}
               className={inputCls}
-              placeholder="you@example.com"
+              placeholder="you@example.com or yourname"
             />
           </Field>
           <Field label="Password">
@@ -310,7 +213,7 @@ function AuthPage() {
             {!isSignup && (
               <button
                 type="button"
-                onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                onClick={() => { setForgotEmail(identifier.includes("@") ? identifier : ""); setForgotOpen(true); }}
                 className="mt-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
                 Forgot password?
@@ -348,10 +251,9 @@ function AuthPage() {
           <div className="mt-4 flex gap-3 rounded-2xl border border-border bg-[var(--color-parchment)]/50 p-4 text-xs leading-relaxed text-muted-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-ember)]" />
             <div>
-              <strong className="text-foreground">Roles:</strong> everyone starts as a student.
-              To become a <strong>teacher</strong>, redeem an invite code issued by an admin on
-              your student dashboard. <strong>Admin</strong> accounts are never self-service —
-              only existing admins can promote others from the Admin dashboard.
+              You can sign up with any email — even a temporary one — to get started right away.
+              You'll only need to verify a real email when you're ready to join a class as a
+              student or become a teacher.
             </div>
           </div>
         )}
@@ -416,55 +318,6 @@ function AuthPage() {
           </form>
         </div>
       )}
-
-      {/* ============ Confirm-your-email (link) dialog ============ */}
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="animate-pop-in w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
-            <div className="mb-4 flex items-start gap-3">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--color-ember)]/10">
-                <MailCheck className="h-5 w-5 text-[var(--color-ember)]" />
-              </span>
-              <div className="min-w-0">
-                <h3 className="font-display text-xl text-foreground">Confirm your email</h3>
-                <p className="mt-1 break-words text-sm text-muted-foreground">
-                  We sent a confirmation link to <strong className="text-foreground">{confirmEmail}</strong>.
-                  Open that email and tap the link to activate your account, then come back and sign in.
-                </p>
-              </div>
-            </div>
-            <p className="rounded-lg border border-border bg-[var(--color-parchment)]/50 p-3 text-xs text-muted-foreground">
-              Can't find it? Check your spam or promotions folder — the link expires after a while.
-            </p>
-            <button
-              type="button"
-              onClick={() => { setConfirmOpen(false); navigate({ to: "/auth", search: { mode: "signin" } }); }}
-              className="press mt-5 w-full rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
-            >
-              Got it — back to sign in
-            </button>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-              <button
-                type="button"
-                onClick={resendConfirmation}
-                disabled={resendIn > 0 || resending}
-                className="underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50 disabled:no-underline"
-              >
-                {resendIn > 0 ? `Resend link in ${resendIn}s` : resending ? "Sending…" : "Resend link"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmOpen(false)}
-                className="hover:text-foreground"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
     </div>
   );
 }
