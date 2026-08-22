@@ -528,6 +528,7 @@ export type Database = {
           current_streak: number
           deactivated_at: string | null
           email: string
+          email_verified: boolean
           feedback_prompt_dismissed: boolean
           feedback_prompt_snooze_until: string | null
           full_name: string | null
@@ -540,12 +541,14 @@ export type Database = {
           role: string
           school: string | null
           theme_preference: string
+          username: string | null
         }
         Insert: {
           created_at?: string
           current_streak?: number
           deactivated_at?: string | null
           email: string
+          email_verified?: boolean
           feedback_prompt_dismissed?: boolean
           feedback_prompt_snooze_until?: string | null
           full_name?: string | null
@@ -558,12 +561,14 @@ export type Database = {
           role?: string
           school?: string | null
           theme_preference?: string
+          username?: string | null
         }
         Update: {
           created_at?: string
           current_streak?: number
           deactivated_at?: string | null
           email?: string
+          email_verified?: boolean
           feedback_prompt_dismissed?: boolean
           feedback_prompt_snooze_until?: string | null
           full_name?: string | null
@@ -576,6 +581,7 @@ export type Database = {
           role?: string
           school?: string | null
           theme_preference?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -630,6 +636,41 @@ export type Database = {
           {
             foreignKeyName: "submissions_student_id_fkey"
             columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_requests: {
+        Row: {
+          created_at: string
+          id: string
+          school_name: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          school_name?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          school_name?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_requests_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
