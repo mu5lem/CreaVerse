@@ -212,6 +212,8 @@ function AdminDashboard() {
 
         <InviteCodesSection />
 
+        <TeacherRequestsSection />
+
         <TeacherActivitySection />
 
         <OnboardingResponsesSection />
@@ -455,6 +457,151 @@ function InviteCodesSection() {
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface TeacherRequestRow {
+  id: string;
+  user_id: string;
+  school_name: string | null;
+  status: string;
+  created_at: string;
+  email: string;
+  full_name: string | null;
+}
+
+function TeacherRequestsSection() {
+  const [rows, setRows] = useState<TeacherRequestRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("teacher_requests")
+      .select("id, user_id, school_name, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+    const uids = [...new Set((data ?? []).map((r) => r.user_id))];
+    let profMap = new Map<string, { email: string; full_name: string | null }>();
+    if (uids.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("id, email, full_name").in("id", uids);
+      profMap = new Map((profs ?? []).map((p) => [p.id, { email: p.email, full_name: (p as { full_name?: string | null }).full_name ?? null }]));
+    }
+    setRows((data ?? []).map((r) => ({
+      id: r.id,
+      user_id: r.user_id,
+      school_name: r.school_name,
+      status: r.status,
+      created_at: r.created_at,
+      email: profMap.get(r.user_id)?.email ?? r.user_id,
+      full_name: profMap.get(r.user_id)?.full_name ?? null,
+    })));
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const decide = async (r: TeacherRequestRow, status: "approved" | "denied") => {
+    setBusyId(r.id);
+    try {
+      if (status === "approved") {
+        const { error } = await supabase.rpc("admin_set_user_status", {
+          target_user_id: r.user_id,
+          new_role: "teacher",
+          new_is_suspended: false,
+        });
+        if (error) throw error;
+      }
+      const { error: rErr } = await supabase
+        .from("teacher_requests")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", r.id);
+      if (rErr) throw rErr;
+      toast.success(status === "approved" ? "Teacher request approved" : "Teacher request denied");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="mt-10">
+      <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+        <GraduationCap className="h-4 w-4 text-[var(--color-ember)]" />
+        <span className="font-medium text-foreground">Teacher Requests</span>
+        <span className="text-xs">— users who asked to become a teacher</span>
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-[var(--color-parchment)] text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 font-medium">Requester</th>
+                <th className="px-4 py-3 font-medium">School</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Requested</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {loading ? (
+                <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">No teacher requests yet.</td></tr>
+              ) : rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="px-4 py-3">
+                    <div className="text-foreground">{r.full_name ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground">{r.email}</div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{r.school_name ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {r.status === "pending" ? (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700">Pending</span>
+                    ) : r.status === "approved" ? (
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700">Approved</span>
+                    ) : (
+                      <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">Denied</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3">
+                    {r.status === "pending" ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => decide(r, "approved")}
+                          disabled={busyId === r.id}
+                          className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => decide(r, "denied")}
+                          disabled={busyId === r.id}
+                          className="rounded-full border border-border px-3 py-1 text-xs font-medium hover:border-destructive hover:text-destructive disabled:opacity-60"
+                        >
+                          Deny
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

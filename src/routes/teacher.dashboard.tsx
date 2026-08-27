@@ -9,6 +9,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PlusCircle, GraduationCap, Users, AlertTriangle, Trash2 } from "lucide-react";
 import {
+  VerificationGate,
+  readPendingVerification,
+  clearPendingVerification,
+  type VerifyIntent,
+} from "@/components/VerificationGate";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -37,7 +43,7 @@ interface ClassRow {
 }
 
 function TeacherDashboard() {
-  const { profile, signOut, user } = useAuth();
+  const { profile, signOut, user, refreshProfile } = useAuth();
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: "", class_code: "", grade: "", description: "" });
@@ -45,6 +51,24 @@ function TeacherDashboard() {
   const [atRiskRows, setAtRiskRows] = useState<{ student_id: string; email: string; avg: number }[]>([]);
   const [pendingDelete, setPendingDelete] = useState<ClassRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [gateIntent, setGateIntent] = useState<VerifyIntent | null>(null);
+  const [gateVerified, setGateVerified] = useState(false);
+  const verified = profile?.email_verified === true;
+
+  useEffect(() => {
+    const pending = readPendingVerification();
+    if (!pending || !user) return;
+    clearPendingVerification();
+    (async () => {
+      await supabase
+        .from("profiles")
+        .update({ email: user.email ?? profile?.email ?? "", email_verified: true })
+        .eq("id", user.id);
+      await refreshProfile();
+      setGateVerified(true);
+      setGateIntent(pending);
+    })();
+  }, [user, profile?.email, refreshProfile]);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -105,6 +129,7 @@ function TeacherDashboard() {
   const createClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || creating) return;
+    if (!verified) { setGateVerified(false); setGateIntent("teacher"); return; }
     const code = form.class_code.trim().toUpperCase();
     if (!code || !form.title.trim()) return;
     setCreating(true);
@@ -318,6 +343,13 @@ function TeacherDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <VerificationGate
+        intent={gateIntent ?? "teacher"}
+        open={gateIntent !== null}
+        startVerified={gateVerified}
+        onClose={() => { setGateIntent(null); setGateVerified(false); }}
+      />
     </div>
   );
 }
