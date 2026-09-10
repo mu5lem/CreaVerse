@@ -46,9 +46,6 @@ function AuthPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [school, setSchool] = useState("");
-  const [gender, setGender] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -101,20 +98,14 @@ function AuthPage() {
     }
 
     if (isSignup) {
-      if (!fullName.trim()) throw new Error("Please enter your full name");
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       const uid = data.user?.id;
       if (uid && data.session) {
+        // The auth trigger creates the profile row; attach the chosen username.
         await supabase
           .from("profiles")
-          .update({
-            username: username ?? null,
-            email_verified: false,
-            full_name: fullName.trim(),
-            school: school.trim() || null,
-            gender: gender || null,
-          })
+          .update({ username: username ?? null, email_verified: false })
           .eq("id", uid);
       }
       if (!data.session) {
@@ -229,46 +220,6 @@ function AuthPage() {
               </button>
             )}
           </Field>
-
-          {isSignup && (
-            <>
-              <Field label="Full name">
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  maxLength={120}
-                  className={inputCls}
-                  placeholder="Your full name"
-                />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="School / College (optional)">
-                  <input
-                    type="text"
-                    value={school}
-                    onChange={(e) => setSchool(e.target.value)}
-                    maxLength={200}
-                    className={inputCls}
-                    placeholder="e.g. Daanish School DG Khan"
-                  />
-                </Field>
-                <Field label="Gender (optional)">
-                  <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    className={inputCls}
-                  >
-                    <option value="">Prefer not to say</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </Field>
-              </div>
-            </>
-          )}
 
           {isSignup && (
             <label className="flex items-start gap-2 rounded-lg border border-border bg-[var(--color-parchment)]/40 p-3 text-xs text-muted-foreground">
