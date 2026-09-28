@@ -9,11 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VrRouteImport } from './routes/vr'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as MinigameRouteImport } from './routes/minigame'
@@ -34,11 +32,6 @@ import { Route as TeacherClassClassCodeRouteImport } from './routes/teacher.clas
 import { Route as TeacherAssignmentAssignmentIdRouteImport } from './routes/teacher.assignment.$assignmentId'
 import { Route as StudentClassClassCodeRouteImport } from './routes/student.class.$classCode'
 
-const VrRoute = VrRouteImport.update({
-  id: '/vr',
-  path: '/vr',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -52,11 +45,6 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -170,11 +158,9 @@ export interface FileRoutesByFullPath {
   '/minigame': typeof MinigameRoute
   '/opportunities': typeof OpportunitiesRoute
   '/privacy': typeof PrivacyRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
-  '/vr': typeof VrRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/student/dashboard': typeof StudentDashboardRoute
   '/teacher/dashboard': typeof TeacherDashboardRoute
@@ -196,11 +182,9 @@ export interface FileRoutesByTo {
   '/minigame': typeof MinigameRoute
   '/opportunities': typeof OpportunitiesRoute
   '/privacy': typeof PrivacyRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
-  '/vr': typeof VrRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/student/dashboard': typeof StudentDashboardRoute
   '/teacher/dashboard': typeof TeacherDashboardRoute
@@ -223,11 +207,9 @@ export interface FileRoutesById {
   '/minigame': typeof MinigameRoute
   '/opportunities': typeof OpportunitiesRoute
   '/privacy': typeof PrivacyRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
-  '/vr': typeof VrRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/student/dashboard': typeof StudentDashboardRoute
   '/teacher/dashboard': typeof TeacherDashboardRoute
@@ -251,11 +233,9 @@ export interface FileRouteTypes {
     | '/minigame'
     | '/opportunities'
     | '/privacy'
-    | '/reset-password'
     | '/settings'
     | '/sitemap.xml'
     | '/terms'
-    | '/vr'
     | '/admin/dashboard'
     | '/student/dashboard'
     | '/teacher/dashboard'
@@ -277,11 +257,9 @@ export interface FileRouteTypes {
     | '/minigame'
     | '/opportunities'
     | '/privacy'
-    | '/reset-password'
     | '/settings'
     | '/sitemap.xml'
     | '/terms'
-    | '/vr'
     | '/admin/dashboard'
     | '/student/dashboard'
     | '/teacher/dashboard'
@@ -303,11 +281,9 @@ export interface FileRouteTypes {
     | '/minigame'
     | '/opportunities'
     | '/privacy'
-    | '/reset-password'
     | '/settings'
     | '/sitemap.xml'
     | '/terms'
-    | '/vr'
     | '/admin/dashboard'
     | '/student/dashboard'
     | '/teacher/dashboard'
@@ -330,11 +306,9 @@ export interface RootRouteChildren {
   MinigameRoute: typeof MinigameRoute
   OpportunitiesRoute: typeof OpportunitiesRoute
   PrivacyRoute: typeof PrivacyRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
-  VrRoute: typeof VrRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   StudentDashboardRoute: typeof StudentDashboardRoute
   TeacherDashboardRoute: typeof TeacherDashboardRoute
@@ -345,13 +319,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/vr': {
-      id: '/vr'
-      path: '/vr'
-      fullPath: '/vr'
-      preLoaderRoute: typeof VrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -371,13 +338,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -530,11 +490,9 @@ const rootRouteChildren: RootRouteChildren = {
   MinigameRoute: MinigameRoute,
   OpportunitiesRoute: OpportunitiesRoute,
   PrivacyRoute: PrivacyRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
-  VrRoute: VrRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   StudentDashboardRoute: StudentDashboardRoute,
   TeacherDashboardRoute: TeacherDashboardRoute,
