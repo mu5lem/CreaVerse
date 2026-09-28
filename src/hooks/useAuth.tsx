@@ -36,7 +36,6 @@ export interface Profile {
   } | null;
   deactivated_at?: string | null;
   username?: string | null;
-  email_verified?: boolean | null;
 }
 
 interface AuthContextValue {

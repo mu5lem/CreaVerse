@@ -12,10 +12,6 @@ export function placeholderEmailFor(username: string) {
   return `${normalizeUsername(username)}@${PLACEHOLDER_EMAIL_DOMAIN}`;
 }
 
-export function isPlaceholderEmail(email?: string | null) {
-  return !!email && email.toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
-}
-
 /** Basic shape check only — deliverability is never validated. */
 export function looksLikeEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
