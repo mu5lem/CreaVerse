@@ -38,7 +38,7 @@ function PrivacyPage() {
 
         <h2 className="mt-6 font-display text-2xl">2. Data we collect</h2>
         <ul className="list-disc pl-6">
-          <li><strong>Account data:</strong> email or phone, full name, gender, and (optionally) your school/college.</li>
+          <li><strong>Account data:</strong> username, full name, gender, and (optionally) your school/college.</li>
           <li><strong>Learning data:</strong> classes you join, assignments and submissions, mentor chat history, journal entries.</li>
           <li><strong>Usage data:</strong> feature interactions and basic device/browser info used to keep the service reliable.</li>
         </ul>

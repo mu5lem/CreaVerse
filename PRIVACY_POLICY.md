@@ -6,7 +6,7 @@ CreaVerse ("we", "us", "our") is an education platform operated for the benefit 
 
 ## 1. Information we collect
 
-- **Account information** you provide at sign-up: full name, email address, gender (optional), current school/college/academy (optional), and role (student / teacher / admin).
+- **Account information** you provide at sign-up: username, full name, gender (optional), current school/college/academy (optional), and role (student / teacher / admin).
 - **Classroom activity**: classes you create or join, assignments you publish or submit, quiz answers, chat messages inside a class, and files you upload.
 - **AI Mentor conversations**: the messages you send to and receive from our AI Mentor, stored per user so history can be restored.
 - **Journal entries**: private daily reflections, visible only to you.

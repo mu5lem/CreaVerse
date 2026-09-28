@@ -1,12 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Bot, Compass, Glasses, Library, Gamepad2, Trophy, NotebookPen, Users, HelpCircle, Mail } from "lucide-react";
+import { Bot, Compass, Library, Gamepad2, Trophy, NotebookPen, Users, HelpCircle, Mail } from "lucide-react";
 import type { ComponentType } from "react";
 
 const links: { to: string; label: string; icon: ComponentType<{ className?: string }> }[] = [
   { to: "/mentor", label: "AI Mentor", icon: Bot },
   { to: "/opportunities", label: "Opportunities", icon: Compass },
   { to: "/contests", label: "Contests", icon: Trophy },
-  { to: "/vr", label: "VR Lab", icon: Glasses },
   { to: "/academy", label: "Academy", icon: Library },
   { to: "/minigame", label: "Memory Game", icon: Gamepad2 },
   { to: "/journal", label: "Journal", icon: NotebookPen },

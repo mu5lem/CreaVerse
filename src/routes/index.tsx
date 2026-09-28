@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "CreaVerse is a Pakistan-first learning platform for students, teachers, and creators — quality education, AI mentorship, and VR lessons for every learner.",
+          "CreaVerse is a Pakistan-first learning platform for students, teachers, and creators — quality education, AI mentorship, and live classrooms for every learner.",
       },
 
       { property: "og:title", content: "CreaVerse — Education for Everyone" },
@@ -151,7 +151,7 @@ function Landing() {
             {[
               { icon: Sparkles, title: "AI Mentor", body: "24/7 tutor that answers, explains and remembers your progress." },
               { icon: MessagesSquare, title: "Classroom & Realtime Chat", body: "Join classes, message teachers and classmates instantly." },
-              { icon: Boxes, title: "VR Learning", body: "Cardboard-ready science lessons — see atoms, gravity, circuits." },
+              { icon: Boxes, title: "Quizzes & Assignments", body: "Teachers post work, quizzes grade themselves instantly." },
               { icon: Compass, title: "Opportunity Hub", body: "Curated scholarships, competitions and internships." },
               { icon: Trophy, title: "Contests", body: "Live student contests with recognition and prizes." },
               { icon: GraduationCap, title: "Academy", body: "Free structured courses from Matric to university." },

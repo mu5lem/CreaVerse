@@ -1,7 +1,7 @@
 # CreaVerse — Education for Everyone
 
 > **Learn, Visualize, and Build Things.**
-> A Pakistan-first, open-source learning universe for students, teachers, and creators — with AI mentorship, live classrooms, immersive VR lessons, an opportunity hub, and predictive analytics.
+> A Pakistan-first, open-source learning universe for students, teachers, and creators — with AI mentorship, live classrooms, quizzes, an opportunity hub, and predictive analytics.
 
 ---
 
@@ -19,7 +19,7 @@ It is a **full-stack, open, free-to-use learning platform** designed for the stu
 
 - **An AI mentor** that explains things patiently, in plain words, and remembers what you've asked before — so a child in a village has the same 24/7 tutor as a child in a private school.
 - **A real classroom system** with live chat, so a teacher anywhere in the country can run an actual class, share assignments, and message students in realtime.
-- **Cardboard-VR science lessons** so students can *see* gravity, atoms, and circuits — because a two-rupee cardboard viewer plus a phone is a science lab we can actually afford.
+- **Quizzes and assignments** that grade themselves, so teachers spend time teaching instead of marking.
 - **An opportunity hub** that surfaces scholarships, competitions, and internships that most students never hear about.
 - **A daily journal, water tracker, streaks, and analytics** — because learning is a habit, not an event.
 
@@ -33,11 +33,12 @@ It is built to run on a low-end Android phone with a bad signal, and it is built
 
 - 🧠 **AI Mentor** — persistent, personalized, patient. Powered by Lovable AI Gateway.
 - 🏫 **Live Classrooms** — teacher-created classes with realtime chat and direct messages.
-- 🥽 **VR Science Lab** — Cardboard-ready stereo view for a curated set of embeddable science videos, plus a partner tool (**Mathify**) for custom visualizations.
+- 📝 **Quizzes & Assignments** — auto-graded quizzes, percentage grades, teacher remarks.
 - 🎯 **Opportunity Hub, Contests, Academy** — curated free content and pathways.
 - 📓 **Daily Journal** — mood, self-assessment, water intake, private-to-you reflections.
 - 📈 **Predictive Analytics** — success score, at-risk detection, per-class weak-area surfacing.
-- 🔐 **Real authentication** — email / password, phone OTP (SMS), and Google OAuth.
+- 🔐 **Frictionless accounts** — sign up with just a username and password. No email required.
+- 👩‍🏫 **Teacher onboarding** — redeem an invite code, or request one from an admin.
 - 📱 **Installable PWA** — works on low-end Android, with offline read-caching for static pages.
 - 🌍 **Built for Pakistan first, the world next.**
 
@@ -60,12 +61,11 @@ src/
 ├── routes/               # File-based routes (TanStack Start)
 │   ├── __root.tsx        # App shell, head metadata, service worker guard
 │   ├── index.tsx         # Landing page
-│   ├── auth.tsx          # Sign in / Sign up (email, phone OTP, Google)
+│   ├── auth.tsx          # Username + password sign in / sign up
 │   ├── student.*.tsx     # Student dashboard & classes
 │   ├── teacher.*.tsx     # Teacher dashboard & class management
 │   ├── admin.dashboard   # Admin console
 │   ├── mentor.tsx        # AI mentor chat
-│   ├── vr.tsx            # Cardboard VR lab
 │   ├── journal.tsx       # Daily journal + water tracker
 │   ├── opportunities.tsx # Opportunity hub
 │   └── ...
@@ -81,23 +81,38 @@ Never edit `src/routeTree.gen.ts` or any file under `src/integrations/supabase/`
 
 ## Local development
 
-This project runs on Lovable Cloud. To develop it locally:
-
 ```bash
+git clone <your-fork-url> creaverse && cd creaverse
 bun install
-bun run dev
+cp .env.example .env   # fill in your Supabase values
+bun run dev            # http://localhost:8080
 ```
 
-Environment variables are auto-provisioned. See `.env` for the public keys.
+## Configuring Supabase
+
+1. Create a Supabase project and copy its URL and publishable (anon) key into `.env`.
+2. Apply the SQL in `supabase/migrations/` in order (e.g. `supabase db push` with the Supabase CLI).
+3. In **Authentication → Providers → Email**, keep email sign-in enabled and **turn off "Confirm email"**. Accounts use an internal address like `username@users.creaverse.local`, so no email is ever sent.
+4. Create a private storage bucket named `classroom-files`.
+5. Make yourself admin: `insert into admin_users(user_id) values ('<your-user-id>'); update profiles set role='admin' where id='<your-user-id>';`
+6. Optional: set `LOVABLE_API_KEY` as a server secret to enable the AI mentor and quiz grading.
+
+## Deploying
+
+- **Lovable:** click Publish.
+- **Vercel:** import the repo, add the `VITE_SUPABASE_*` and `SUPABASE_*` variables from `.env.example`, and deploy (the Nitro Vercel preset is configured in `vite.config.ts`).
+- **Cloudflare Workers:** `bun run build` and deploy the output with Wrangler.
 
 ---
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 ## Security & privacy
 
 - Every user-facing table has **Row Level Security enabled** and policies scoped to `auth.uid()`.
 - Admin roles live in a separate `admin_users` table (never on `profiles`) to prevent privilege escalation.
 - `profiles_guard_privileged_columns` trigger blocks any client-side attempt to change `role` or `is_suspended`.
-- Password reset uses Supabase's native flow; passwords are never stored or logged by the app.
+- Passwords are handled by Supabase Auth and are never stored or logged by the app.
 - Journal entries are strictly per-user; no admin read access.
 
 ---

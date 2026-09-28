@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { brand } from "@/lib/brand";
 import { Flame, Sparkles, BookOpen, GraduationCap, TrendingUp, AlertCircle } from "lucide-react";
 import { DailyQuote } from "@/components/DailyQuote";
-import { VerificationGate, readPendingVerification, clearPendingVerification, type VerifyIntent } from "@/components/VerificationGate";
 
 export const Route = createFileRoute("/student/dashboard")({
   component: () => (
@@ -36,25 +35,21 @@ function StudentDashboard() {
   const [classes, setClasses] = useState<EnrolledClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [grades, setGrades] = useState<{ grade: string | null; class_code: string }[]>([]);
-  const [gateIntent, setGateIntent] = useState<VerifyIntent | null>(null);
-  const [gateVerified, setGateVerified] = useState(false);
-  const verified = profile?.email_verified === true;
+  const [schoolName, setSchoolName] = useState("");
+  const [requesting, setRequesting] = useState(false);
 
-  // Returning from the Google verification redirect: mark verified, resume intent.
-  useEffect(() => {
-    const pending = readPendingVerification();
-    if (!pending || !user) return;
-    clearPendingVerification();
-    (async () => {
-      await supabase
-        .from("profiles")
-        .update({ email: user.email ?? profile?.email ?? "", email_verified: true })
-        .eq("id", user.id);
-      await refreshProfile();
-      setGateVerified(true);
-      setGateIntent(pending);
-    })();
-  }, [user, profile?.email, refreshProfile]);
+  const handleRequestCode = async () => {
+    if (!user || requesting) return;
+    setRequesting(true);
+    const { error } = await supabase.from("teacher_requests").insert({
+      user_id: user.id,
+      school_name: schoolName.trim() || null,
+    });
+    setRequesting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Request sent — an admin will review it soon.");
+    setSchoolName("");
+  };
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -94,7 +89,6 @@ function StudentDashboard() {
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || joining) return;
-    if (!verified) { setGateVerified(false); setGateIntent("student"); return; }
     const code = classCode.trim().toUpperCase();
     if (!code) return;
     setJoining(true);
@@ -115,7 +109,6 @@ function StudentDashboard() {
 
   const handleUpgrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!verified) { setGateVerified(false); setGateIntent("teacher"); return; }
     if (!inviteCode.trim() || upgrading) return;
     setUpgrading(true);
     try {
@@ -335,18 +328,30 @@ function StudentDashboard() {
               disabled={upgrading || !inviteCode.trim()}
               className="mt-3 w-full rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
             >
-              {upgrading ? "Verifying…" : "Redeem code"}
+              {upgrading ? "Checking…" : "Redeem code"}
             </button>
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">No code? Ask an admin for one.</p>
+              <input
+                value={schoolName}
+                onChange={(e) => setSchoolName(e.target.value)}
+                maxLength={150}
+                placeholder="School name (optional)"
+                className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:border-[var(--color-ember)] focus:ring-2 focus:ring-[var(--color-ember)]/20"
+              />
+              <button
+                type="button"
+                onClick={handleRequestCode}
+                disabled={requesting}
+                className="mt-3 w-full rounded-full border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-60"
+              >
+                {requesting ? "Sending…" : "Request a code from admin"}
+              </button>
+            </div>
           </form>
         </div>
       </main>
 
-      <VerificationGate
-        intent={gateIntent ?? "student"}
-        open={gateIntent !== null}
-        startVerified={gateVerified}
-        onClose={() => { setGateIntent(null); setGateVerified(false); load(); }}
-      />
     </div>
   );
 }
