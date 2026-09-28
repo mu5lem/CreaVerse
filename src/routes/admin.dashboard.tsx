@@ -210,6 +210,7 @@ function AdminDashboard() {
           </div>
         </div>
 
+        <TeacherRequestsSection />
         <InviteCodesSection />
 
         <TeacherActivitySection />
@@ -263,6 +264,81 @@ interface InviteCode {
   uses: number;
   expires_at: string | null;
   active: boolean;
+}
+
+function TeacherRequestsSection() {
+  const [reqs, setReqs] = useState<{ id: string; user_id: string; school_name: string | null; status: string; created_at: string; name: string }[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("teacher_requests")
+      .select("id, user_id, school_name, status, created_at")
+      .order("created_at", { ascending: false });
+    if (error) return toast.error(error.message);
+    const ids = [...new Set((data ?? []).map((r) => r.user_id))];
+    const names = new Map<string, string>();
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, full_name, username, email").in("id", ids);
+      (profs ?? []).forEach((p) => names.set(p.id, p.full_name || p.username || p.email));
+    }
+    setReqs((data ?? []).map((r) => ({ ...r, name: names.get(r.user_id) ?? "Unknown user" })));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const decide = async (id: string, userId: string, approve: boolean) => {
+    setBusy(id);
+    try {
+      if (approve) {
+        const { error } = await supabase.rpc("admin_set_user_status", {
+          target_user_id: userId, new_role: "teacher", new_is_suspended: false,
+        });
+        if (error) throw error;
+      }
+      const { error } = await supabase
+        .from("teacher_requests")
+        .update({ status: approve ? "approved" : "denied" })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success(approve ? "Approved — user is now a teacher" : "Request denied");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <section className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="flex items-center gap-2 font-display text-xl text-foreground">
+        <GraduationCap className="h-5 w-5" /> Teacher Requests
+      </h2>
+      {reqs.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">No teacher requests yet.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border">
+          {reqs.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+              <div>
+                <div className="font-medium text-foreground">{r.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {r.school_name || "No school given"} · {new Date(r.created_at).toLocaleDateString()} · {r.status}
+                </div>
+              </div>
+              {r.status === "pending" && (
+                <div className="flex gap-2">
+                  <button disabled={busy === r.id} onClick={() => decide(r.id, r.user_id, true)} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60">Approve</button>
+                  <button disabled={busy === r.id} onClick={() => decide(r.id, r.user_id, false)} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-60">Deny</button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 function InviteCodesSection() {
