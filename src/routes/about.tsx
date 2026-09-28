@@ -109,10 +109,9 @@ function AboutPage() {
             {brand.name} was built to narrow that gap. Not with slogans, but with
             software. We put a <strong>free AI mentor</strong> in every learner's
             pocket, so a student without a private tutor can still ask "why?" at
-            midnight and get a patient answer. We embed <strong>real 3D and VR
-            visualizations</strong> of the solar system, the human heart, and the
-            atom — because a village student deserves to <em>see</em> gravity, not
-            just memorize its formula. We build a <strong>teacher studio</strong>
+            midnight and get a patient answer. We curate <strong>free courses and
+            learning paths</strong> from the best open sources — because a village
+            student deserves to understand, not just memorize. We build a <strong>teacher studio</strong>
             where a single motivated ustaad in Layyah can run a class as
             professionally as any institute in Lahore, and a <strong>class chat</strong>
             so students never learn alone.
