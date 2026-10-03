@@ -116,7 +116,7 @@ function Landing() {
           </p>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
             {brand.name} is where students, teachers, and creators come together —
-            from Matric to university, with AI mentorship and immersive lessons.
+            from Matric to university, with AI mentorship and live classrooms.
           </p>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
