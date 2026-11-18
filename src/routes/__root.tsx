@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
@@ -18,6 +19,7 @@ import { OfflineBanner } from "../components/OfflineBanner";
 import { ConfirmProvider } from "../components/ConfirmDialog";
 import { OnboardingGate } from "../components/OnboardingGate";
 import { registerServiceWorker } from "../lib/register-sw";
+import { FooterLinks } from "../components/FooterLinks";
 
 
 function NotFoundComponent() {
@@ -42,7 +44,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -182,6 +184,7 @@ function RootComponent() {
           <OnboardingGate />
           <div className="animate-fade-up transition-all duration-300 ease-out">
             <Outlet />
+            <FooterLinks />
           </div>
           <Toaster position="top-right" richColors />
         </ConfirmProvider>

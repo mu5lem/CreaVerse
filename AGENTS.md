@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep learning-group navigation in GroupNav and policy/help links in the root FooterLinks so dashboard and inner-page navigation stays consistent.
+- Merge directories and wellness tools through dedicated routes and extracted feature components; retain legacy URL redirects so existing bookmarks remain valid.

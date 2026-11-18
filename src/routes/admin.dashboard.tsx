@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
-import { QuickNav } from "@/components/QuickNav";
+import { GroupNav } from "@/components/GroupNav";
 import { useAuth, type Role } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, GraduationCap, School, Star, Ticket, Plus, Trash2, Activity } from "lucide-react";
@@ -114,7 +114,7 @@ function AdminDashboard() {
           </p>
         </div>
 
-        <QuickNav />
+        <GroupNav role={profile.role} />
 
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
           {[
@@ -213,7 +213,11 @@ function AdminDashboard() {
         <TeacherRequestsSection />
         <InviteCodesSection />
 
-        <TeacherActivitySection />
+        <section id="my-classes" className="scroll-mt-32">
+          <h2 className="mt-10 font-display text-xl text-foreground">My Classes</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Classroom activity across your teachers.</p>
+          <TeacherActivitySection />
+        </section>
 
         <OnboardingResponsesSection />
 

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
-import { QuickNav } from "@/components/QuickNav";
+import { GroupNav } from "@/components/GroupNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { brand } from "@/lib/brand";
@@ -207,7 +207,7 @@ function StudentDashboard() {
           </div>
         </div>
 
-        <QuickNav />
+        <GroupNav role={profile.role} />
 
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2">
@@ -278,7 +278,7 @@ function StudentDashboard() {
             <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-parchment)] text-[var(--color-ink)]">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <h2 className="font-display text-xl text-foreground">My Classes</h2>
+            <h2 id="my-classes" className="scroll-mt-32 font-display text-xl text-foreground">My Classes</h2>
             {loading ? (
               <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
             ) : classes.length === 0 ? (

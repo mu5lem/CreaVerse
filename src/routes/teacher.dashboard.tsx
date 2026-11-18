@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
-import { QuickNav } from "@/components/QuickNav";
+import { GroupNav } from "@/components/GroupNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PlusCircle, GraduationCap, Users, AlertTriangle, Trash2 } from "lucide-react";
@@ -162,7 +162,7 @@ function TeacherDashboard() {
           </p>
         </div>
 
-        <QuickNav />
+        <GroupNav role={profile.role} />
 
         <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
@@ -236,7 +236,7 @@ function TeacherDashboard() {
             </div>
           </form>
 
-          <div className="md:col-span-2">
+          <div id="my-classes" className="scroll-mt-32 md:col-span-2">
             <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
               <GraduationCap className="h-4 w-4" />
               My Classes

@@ -19,8 +19,10 @@ import { Route as ContestsRouteImport } from './routes/contests'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as MentorRouteImport } from './routes/mentor'
+import { Route as MindGardenRouteImport } from './routes/mind-garden'
 import { Route as MinigameRouteImport } from './routes/minigame'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
+import { Route as OutreachRouteImport } from './routes/outreach'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -82,6 +84,11 @@ const MentorRoute = MentorRouteImport.update({
   path: '/mentor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MindGardenRoute = MindGardenRouteImport.update({
+  id: '/mind-garden',
+  path: '/mind-garden',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MinigameRoute = MinigameRouteImport.update({
   id: '/minigame',
   path: '/minigame',
@@ -90,6 +97,11 @@ const MinigameRoute = MinigameRouteImport.update({
 const OpportunitiesRoute = OpportunitiesRouteImport.update({
   id: '/opportunities',
   path: '/opportunities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OutreachRoute = OutreachRouteImport.update({
+  id: '/outreach',
+  path: '/outreach',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -155,8 +167,10 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/journal': typeof JournalRoute
   '/mentor': typeof MentorRoute
+  '/mind-garden': typeof MindGardenRoute
   '/minigame': typeof MinigameRoute
   '/opportunities': typeof OpportunitiesRoute
+  '/outreach': typeof OutreachRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -179,8 +193,10 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/journal': typeof JournalRoute
   '/mentor': typeof MentorRoute
+  '/mind-garden': typeof MindGardenRoute
   '/minigame': typeof MinigameRoute
   '/opportunities': typeof OpportunitiesRoute
+  '/outreach': typeof OutreachRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -204,8 +220,10 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/journal': typeof JournalRoute
   '/mentor': typeof MentorRoute
+  '/mind-garden': typeof MindGardenRoute
   '/minigame': typeof MinigameRoute
   '/opportunities': typeof OpportunitiesRoute
+  '/outreach': typeof OutreachRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -230,8 +248,10 @@ export interface FileRouteTypes {
     | '/faq'
     | '/journal'
     | '/mentor'
+    | '/mind-garden'
     | '/minigame'
     | '/opportunities'
+    | '/outreach'
     | '/privacy'
     | '/settings'
     | '/sitemap.xml'
@@ -254,8 +274,10 @@ export interface FileRouteTypes {
     | '/faq'
     | '/journal'
     | '/mentor'
+    | '/mind-garden'
     | '/minigame'
     | '/opportunities'
+    | '/outreach'
     | '/privacy'
     | '/settings'
     | '/sitemap.xml'
@@ -278,8 +300,10 @@ export interface FileRouteTypes {
     | '/faq'
     | '/journal'
     | '/mentor'
+    | '/mind-garden'
     | '/minigame'
     | '/opportunities'
+    | '/outreach'
     | '/privacy'
     | '/settings'
     | '/sitemap.xml'
@@ -303,8 +327,10 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   JournalRoute: typeof JournalRoute
   MentorRoute: typeof MentorRoute
+  MindGardenRoute: typeof MindGardenRoute
   MinigameRoute: typeof MinigameRoute
   OpportunitiesRoute: typeof OpportunitiesRoute
+  OutreachRoute: typeof OutreachRoute
   PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -389,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MentorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mind-garden': {
+      id: '/mind-garden'
+      path: '/mind-garden'
+      fullPath: '/mind-garden'
+      preLoaderRoute: typeof MindGardenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/minigame': {
       id: '/minigame'
       path: '/minigame'
@@ -401,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/opportunities'
       fullPath: '/opportunities'
       preLoaderRoute: typeof OpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outreach': {
+      id: '/outreach'
+      path: '/outreach'
+      fullPath: '/outreach'
+      preLoaderRoute: typeof OutreachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -487,8 +527,10 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   JournalRoute: JournalRoute,
   MentorRoute: MentorRoute,
+  MindGardenRoute: MindGardenRoute,
   MinigameRoute: MinigameRoute,
   OpportunitiesRoute: OpportunitiesRoute,
+  OutreachRoute: OutreachRoute,
   PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
