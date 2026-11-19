@@ -8,8 +8,7 @@ interface Props {
 }
 
 export function QuizTaker({ questions, answers, onChange, readOnly }: Props) {
-  const set = (id: string, patch: AnswerMap[string]) =>
-    onChange({ ...answers, [id]: patch });
+  const set = (id: string, patch: AnswerMap[string]) => onChange({ ...answers, [id]: patch });
 
   if (questions.length === 0) {
     return <div className="text-sm text-muted-foreground">This quiz has no questions yet.</div>;
@@ -23,15 +22,21 @@ export function QuizTaker({ questions, answers, onChange, readOnly }: Props) {
           <div key={q.id} className="rounded-lg border border-border bg-background p-3">
             <div className="mb-2 flex items-start justify-between gap-2">
               <div className="text-sm font-medium text-foreground">
-                <span className="text-muted-foreground">Q{idx + 1}.</span> {q.prompt || <span className="italic text-muted-foreground">(no prompt)</span>}
+                <span className="text-muted-foreground">Q{idx + 1}.</span>{" "}
+                {q.prompt || <span className="italic text-muted-foreground">(no prompt)</span>}
               </div>
-              <span className="shrink-0 text-xs text-muted-foreground">{q.points} pt{q.points === 1 ? "" : "s"}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {q.points} pt{q.points === 1 ? "" : "s"}
+              </span>
             </div>
 
             {q.kind === "mcq" && (
               <div className="space-y-1.5">
                 {q.options.map((opt, oi) => (
-                  <label key={oi} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-muted/50">
+                  <label
+                    key={oi}
+                    className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-muted/50"
+                  >
                     <input
                       type="radio"
                       name={`q-${q.id}`}
@@ -39,7 +44,9 @@ export function QuizTaker({ questions, answers, onChange, readOnly }: Props) {
                       checked={a?.kind === "mcq" && a.selectedIndex === oi}
                       onChange={() => set(q.id, { kind: "mcq", selectedIndex: oi })}
                     />
-                    <span>{opt || <span className="italic text-muted-foreground">(empty)</span>}</span>
+                    <span>
+                      {opt || <span className="italic text-muted-foreground">(empty)</span>}
+                    </span>
                   </label>
                 ))}
               </div>

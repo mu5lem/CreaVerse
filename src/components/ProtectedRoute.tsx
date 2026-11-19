@@ -9,13 +9,7 @@ const roleHome: Record<Role, string> = {
   admin: "/admin/dashboard",
 };
 
-export function ProtectedRoute({
-  role,
-  children,
-}: {
-  role?: Role;
-  children: ReactNode;
-}) {
+export function ProtectedRoute({ role, children }: { role?: Role; children: ReactNode }) {
   const { user, profile, loading, error, retry, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -57,12 +51,24 @@ export function ProtectedRoute({
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="max-w-md rounded-2xl border border-destructive/30 bg-card p-8 text-center shadow-sm">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
           </div>
           <h2 className="mt-4 font-display text-2xl text-foreground">Account Suspended</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your access has been paused by an administrator. Please contact support if
-            you believe this is a mistake.
+            Your access has been paused by an administrator. Please contact support if you believe
+            this is a mistake.
           </p>
           <button
             onClick={() => signOut()}

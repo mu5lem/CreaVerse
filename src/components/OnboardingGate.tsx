@@ -9,7 +9,8 @@ type ThemePref = "system" | "light" | "dark";
 const THEME_KEY = "creaverse:theme";
 
 function applyTheme(theme: ThemePref) {
-  const prefersDark = typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+  const prefersDark =
+    typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches;
   const dark = theme === "dark" || (theme === "system" && prefersDark);
   document.documentElement.classList.toggle("dark", dark);
   try {
@@ -92,7 +93,6 @@ export function OnboardingGate() {
   if (loading || !user) return null;
 
   if (needsTheme) {
-
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
         <div className="animate-fade-up w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
@@ -142,7 +142,6 @@ export function OnboardingGate() {
   return null;
 }
 
-
 const PURPOSES = [
   "I'm a student — for classes & study",
   "I'm a teacher — to run classes",
@@ -173,15 +172,13 @@ function SurveyDialog({ userId, onDone }: { userId: string; onDone: () => void }
   const submit = async () => {
     if (!canSubmit || submitting) return;
     setSubmitting(true);
-    const { error } = await supabase
-      .from("onboarding_responses")
-      .insert({
-        user_id: userId,
-        purpose,
-        discovery_source: source,
-        age_group: ageGroup,
-        biggest_challenge: dailyGoal.trim(),
-      });
+    const { error } = await supabase.from("onboarding_responses").insert({
+      user_id: userId,
+      purpose,
+      discovery_source: source,
+      age_group: ageGroup,
+      biggest_challenge: dailyGoal.trim(),
+    });
     setSubmitting(false);
     if (error) {
       if (error.code === "23505") {
@@ -202,22 +199,46 @@ function SurveyDialog({ userId, onDone }: { userId: string; onDone: () => void }
           <Sparkles className="h-4 w-4" />
           <span className="text-xs font-semibold uppercase tracking-wide">Quick intro survey</span>
         </div>
-        <h2 className="font-display text-2xl font-semibold text-foreground">Help us make CreaVerse fit you</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Four short questions — takes under a minute. Your answers go straight to our team.</p>
+        <h2 className="font-display text-2xl font-semibold text-foreground">
+          Help us make CreaVerse fit you
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Four short questions — takes under a minute. Your answers go straight to our team.
+        </p>
 
         <div className="mt-5 grid gap-4 max-h-[65vh] overflow-y-auto pr-1">
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Why did you come to CreaVerse?</label>
-            <select value={purpose} onChange={(e) => setPurpose(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              Why did you come to CreaVerse?
+            </label>
+            <select
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            >
               <option value="">Choose one…</option>
-              {PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
+              {PURPOSES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">How did you hear about us?</label>
-            <select value={source} onChange={(e) => setSource(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              How did you hear about us?
+            </label>
+            <select
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            >
               <option value="">Choose one…</option>
-              {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {SOURCES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -236,7 +257,9 @@ function SurveyDialog({ userId, onDone }: { userId: string; onDone: () => void }
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">What's one thing you hope to achieve with CreaVerse in the next month?</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              What's one thing you hope to achieve with CreaVerse in the next month?
+            </label>
             <textarea
               value={dailyGoal}
               onChange={(e) => setDailyGoal(e.target.value)}

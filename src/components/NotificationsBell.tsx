@@ -55,7 +55,11 @@ export function NotificationsBell() {
   const markAllRead = async () => {
     if (!user || unread === 0) return;
     setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-    const { error } = await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.id)
+      .eq("read", false);
     if (error) {
       toast.error(error.message);
       await load();
@@ -83,7 +87,11 @@ export function NotificationsBell() {
         <div className="animate-slide-in-right absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-popover shadow-xl">
           <div className="flex items-center justify-between border-b border-border p-3">
             <div className="font-display text-base text-foreground">Notifications</div>
-            <button type="button" onClick={markAllRead} className="press inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+            <button
+              type="button"
+              onClick={markAllRead}
+              className="press inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
               <CheckCheck className="h-3.5 w-3.5" /> Mark read
             </button>
           </div>

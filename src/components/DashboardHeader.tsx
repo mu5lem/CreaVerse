@@ -46,9 +46,7 @@ export function DashboardHeader({
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <div className="hidden text-right md:block">
             <div className="max-w-[180px] truncate text-sm text-foreground">{email}</div>
-            <div className="text-xs uppercase tracking-wider text-[var(--color-ember)]">
-              {role}
-            </div>
+            <div className="text-xs uppercase tracking-wider text-[var(--color-ember)]">{role}</div>
           </div>
           <NotificationsBell />
           <Link
@@ -78,10 +76,8 @@ export function DashboardHeader({
               <span className="hidden sm:inline">Exit</span>
             </button>
           )}
-
         </div>
       </div>
     </header>
   );
 }
-

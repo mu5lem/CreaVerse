@@ -44,12 +44,21 @@ export function QuizBuilder({ value, onChange }: Props) {
         <div key={q.id} className="rounded-lg border border-border bg-background p-3">
           <div className="mb-2 flex items-center gap-2">
             <div className="flex flex-col">
-              <button type="button" onClick={() => move(idx, -1)} className="text-muted-foreground hover:text-foreground" aria-label="Move up">
+              <button
+                type="button"
+                onClick={() => move(idx, -1)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Move up"
+              >
                 <GripVertical className="h-3.5 w-3.5" />
               </button>
             </div>
             <span className="rounded-full bg-[var(--color-parchment)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-foreground">
-              {q.kind === "mcq" ? "Multiple choice" : q.kind === "tf" ? "True / False" : "Short answer"}
+              {q.kind === "mcq"
+                ? "Multiple choice"
+                : q.kind === "tf"
+                  ? "True / False"
+                  : "Short answer"}
             </span>
             <span className="text-xs text-muted-foreground">Q{idx + 1}</span>
             <div className="ml-auto flex items-center gap-2">
@@ -60,11 +69,18 @@ export function QuizBuilder({ value, onChange }: Props) {
                   min={0}
                   step={0.5}
                   value={q.points}
-                  onChange={(e) => update(idx, { points: Math.max(0, parseFloat(e.target.value) || 0) })}
+                  onChange={(e) =>
+                    update(idx, { points: Math.max(0, parseFloat(e.target.value) || 0) })
+                  }
                   className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs"
                 />
               </label>
-              <button type="button" onClick={() => remove(idx)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Delete question">
+              <button
+                type="button"
+                onClick={() => remove(idx)}
+                className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                aria-label="Delete question"
+              >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -103,9 +119,12 @@ export function QuizBuilder({ value, onChange }: Props) {
                       type="button"
                       onClick={() => {
                         const options = q.options.filter((_, i) => i !== oi);
-                        const correctIndex = q.correctIndex === oi ? null
-                          : q.correctIndex !== null && q.correctIndex > oi ? q.correctIndex - 1
-                          : q.correctIndex;
+                        const correctIndex =
+                          q.correctIndex === oi
+                            ? null
+                            : q.correctIndex !== null && q.correctIndex > oi
+                              ? q.correctIndex - 1
+                              : q.correctIndex;
                         update(idx, { options, correctIndex });
                       }}
                       className="text-muted-foreground hover:text-destructive"
@@ -124,7 +143,9 @@ export function QuizBuilder({ value, onChange }: Props) {
                 + Add option
               </button>
               {q.correctIndex === null && (
-                <p className="text-[11px] text-muted-foreground">Pick the correct option to enable auto-scoring.</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Pick the correct option to enable auto-scoring.
+                </p>
               )}
             </div>
           )}
@@ -157,7 +178,9 @@ export function QuizBuilder({ value, onChange }: Props) {
                 className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
               />
               <p className="mt-1 text-[11px] text-muted-foreground">
-                {q.answer?.trim() ? "Auto-graded by case-insensitive exact match." : "Leave empty to grade manually."}
+                {q.answer?.trim()
+                  ? "Auto-graded by case-insensitive exact match."
+                  : "Leave empty to grade manually."}
               </p>
             </div>
           )}
@@ -165,13 +188,25 @@ export function QuizBuilder({ value, onChange }: Props) {
       ))}
 
       <div className="flex flex-wrap gap-2 pt-1">
-        <button type="button" onClick={() => add("mcq")} className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--color-ember)]/60">
+        <button
+          type="button"
+          onClick={() => add("mcq")}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--color-ember)]/60"
+        >
           <Plus className="h-3.5 w-3.5" /> Multiple choice
         </button>
-        <button type="button" onClick={() => add("tf")} className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--color-ember)]/60">
+        <button
+          type="button"
+          onClick={() => add("tf")}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--color-ember)]/60"
+        >
           <Plus className="h-3.5 w-3.5" /> True / False
         </button>
-        <button type="button" onClick={() => add("short")} className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--color-ember)]/60">
+        <button
+          type="button"
+          onClick={() => add("short")}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--color-ember)]/60"
+        >
           <Plus className="h-3.5 w-3.5" /> Short answer
         </button>
       </div>

@@ -18,7 +18,11 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign In or Sign Up — CreaVerse" },
-      { name: "description", content: "Sign in or create a CreaVerse account with just a username and password to access classes, AI mentorship, and opportunities." },
+      {
+        name: "description",
+        content:
+          "Sign in or create a CreaVerse account with just a username and password to access classes, AI mentorship, and opportunities.",
+      },
       { property: "og:title", content: "Sign In — CreaVerse" },
       { property: "og:description", content: "Access your CreaVerse learning account." },
       { property: "og:url", content: "/auth" },
@@ -60,9 +64,10 @@ function AuthPage() {
 
   const handleEmail = async () => {
     if (isSignup) {
-      if (identifier.includes("@")) throw new Error("Usernames can't contain \"@\"");
+      if (identifier.includes("@")) throw new Error('Usernames can\'t contain "@"');
       const username = normalizeUsername(identifier);
-      if (username.length < 3) throw new Error("Username must be at least 3 characters (letters, numbers, . _ -)");
+      if (username.length < 3)
+        throw new Error("Username must be at least 3 characters (letters, numbers, . _ -)");
       const name = fullName.trim();
       if (!name) throw new Error("Please enter your full name");
       const { data, error } = await supabase.auth.signUp({
@@ -83,7 +88,12 @@ function AuthPage() {
       }
       await supabase
         .from("profiles")
-        .update({ username, full_name: name, school: school.trim() || null, gender: gender || null })
+        .update({
+          username,
+          full_name: name,
+          school: school.trim() || null,
+          gender: gender || null,
+        })
         .eq("id", uid);
       toast.success(`Welcome to ${brand.name}!`);
     } else {
@@ -140,7 +150,10 @@ function AuthPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
+        >
           <Field label="Username">
             <input
               type="text"
@@ -169,13 +182,30 @@ function AuthPage() {
           {isSignup && (
             <>
               <Field label="Full name">
-                <input required maxLength={100} value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputCls} placeholder="Your full name" />
+                <input
+                  required
+                  maxLength={100}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className={inputCls}
+                  placeholder="Your full name"
+                />
               </Field>
               <Field label="School (optional)">
-                <input maxLength={150} value={school} onChange={(e) => setSchool(e.target.value)} className={inputCls} placeholder="School, college or academy" />
+                <input
+                  maxLength={150}
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                  className={inputCls}
+                  placeholder="School, college or academy"
+                />
               </Field>
               <Field label="Gender (optional)">
-                <select value={gender} onChange={(e) => setGender(e.target.value)} className={inputCls}>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className={inputCls}
+                >
                   <option value="">Prefer not to say</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -195,9 +225,20 @@ function AuthPage() {
               />
               <span>
                 I agree to the{" "}
-                <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">Privacy Policy</Link>{" "}
+                <Link
+                  to="/privacy"
+                  className="font-medium text-foreground underline underline-offset-2"
+                >
+                  Privacy Policy
+                </Link>{" "}
                 and{" "}
-                <Link to="/terms" className="font-medium text-foreground underline underline-offset-2">Terms of Service</Link>.
+                <Link
+                  to="/terms"
+                  className="font-medium text-foreground underline underline-offset-2"
+                >
+                  Terms of Service
+                </Link>
+                .
               </span>
             </label>
           )}
@@ -215,21 +256,28 @@ function AuthPage() {
           {isSignup ? (
             <>
               Already have an account?{" "}
-              <Link to="/auth" search={{ mode: "signin" }} className="font-medium text-foreground underline-offset-4 hover:underline">
+              <Link
+                to="/auth"
+                search={{ mode: "signin" }}
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
                 Sign in
               </Link>
             </>
           ) : (
             <>
               New here?{" "}
-              <Link to="/auth" search={{ mode: "signup" }} className="font-medium text-foreground underline-offset-4 hover:underline">
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
                 Create an account
               </Link>
             </>
           )}
         </div>
       </div>
-
     </div>
   );
 }

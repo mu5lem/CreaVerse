@@ -8,6 +8,8 @@ import { GroupNav } from "@/components/GroupNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { brand } from "@/lib/brand";
+import type { AcademyCategory } from "@/lib/academy-data";
+import { mentorPromptFor, mentorSubjectFor, suggestForText } from "@/lib/academy-utils";
 import { Flame, Sparkles, BookOpen, GraduationCap, TrendingUp, AlertCircle } from "lucide-react";
 import { DailyQuote } from "@/components/DailyQuote";
 
@@ -37,6 +39,16 @@ function StudentDashboard() {
   const [grades, setGrades] = useState<{ grade: string | null; class_code: string }[]>([]);
   const [schoolName, setSchoolName] = useState("");
   const [requesting, setRequesting] = useState(false);
+  const [academy, setAcademy] = useState<AcademyCategory[] | null>(null);
+  const [streak, setStreak] = useState<number | null>(null);
+
+  // Live journal streak (server-computed, never stale) and lazily-loaded Academy data for suggestions.
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("my_journal_streak").then(({ data, error }) => {
+      if (!error && typeof data === "number") setStreak(data);
+    });
+  }, [user]);
 
   const handleRequestCode = async () => {
     if (!user || requesting) return;
@@ -104,7 +116,6 @@ function StudentDashboard() {
     }
     setClassCode("");
     await load();
-
   };
 
   const handleUpgrade = async (e: React.FormEvent) => {
@@ -144,7 +155,8 @@ function StudentDashboard() {
         return { class_code: g.class_code, score: val > 10 ? val : val * 10 };
       })
       .filter((x): x is { class_code: string; score: number } => x !== null);
-    if (numeric.length === 0) return { avg: null as number | null, weak: [] as { class_code: string; avg: number }[] };
+    if (numeric.length === 0)
+      return { avg: null as number | null, weak: [] as { class_code: string; avg: number }[] };
     const avg = numeric.reduce((a, b) => a + b.score, 0) / numeric.length;
     const byClass = new Map<string, number[]>();
     numeric.forEach((n) => {
@@ -155,9 +167,18 @@ function StudentDashboard() {
       class_code,
       avg: arr.reduce((a, b) => a + b, 0) / arr.length,
     }));
-    const weak = perClass.filter((c) => c.avg < 70).sort((a, b) => a.avg - b.avg).slice(0, 3);
+    const weak = perClass
+      .filter((c) => c.avg < 70)
+      .sort((a, b) => a.avg - b.avg)
+      .slice(0, 3);
     return { avg, weak };
   }, [grades]);
+
+  const weakCount = analytics.weak.length;
+  useEffect(() => {
+    if (weakCount === 0 || academy) return;
+    import("@/lib/academy-data").then((m) => setAcademy(m.academyData));
+  }, [weakCount, academy]);
 
   if (!profile) return null;
 
@@ -195,7 +216,8 @@ function StudentDashboard() {
                 Current streak
               </div>
               <div className="font-display text-2xl text-foreground">
-                {profile.current_streak} {profile.current_streak === 1 ? "day" : "days"}
+                {streak ?? profile.current_streak}{" "}
+                {(streak ?? profile.current_streak) === 1 ? "day" : "days"}
               </div>
             </div>
           </div>
@@ -209,24 +231,29 @@ function StudentDashboard() {
 
         <GroupNav role={profile.role} />
 
-
         <div className="mb-8 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
               <TrendingUp className="h-4 w-4" /> Success Score
             </div>
             {analytics.avg === null ? (
-              <p className="text-sm text-muted-foreground">Submit and get graded work to unlock your predicted success score.</p>
+              <p className="text-sm text-muted-foreground">
+                Submit and get graded work to unlock your predicted success score.
+              </p>
             ) : (
               <>
-                <div className="font-display text-4xl text-foreground">{Math.round(analytics.avg)}%</div>
+                <div className="font-display text-4xl text-foreground">
+                  {Math.round(analytics.avg)}%
+                </div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-parchment)]">
                   <div
                     className="h-full rounded-full bg-[var(--color-ember)] transition-all"
                     style={{ width: `${Math.min(100, Math.max(0, analytics.avg))}%` }}
                   />
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground">Based on your graded submissions across all classes.</p>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Based on your graded submissions across all classes.
+                </p>
               </>
             )}
           </div>
@@ -238,20 +265,63 @@ function StudentDashboard() {
               <p className="text-sm text-muted-foreground">No weak areas detected — keep it up!</p>
             ) : (
               <ul className="space-y-2">
-                {analytics.weak.map((w) => (
-                  <li key={w.class_code} className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                    <span className="font-mono text-xs">{w.class_code}</span>
-                    <span className="text-[var(--color-ember)]">{Math.round(w.avg)}%</span>
-                  </li>
-                ))}
+                {analytics.weak.map((w) => {
+                  const title =
+                    classes.find((c) => c.class_code === w.class_code)?.title ?? w.class_code;
+                  const picks = academy ? suggestForText(academy, title, 2) : [];
+                  return (
+                    <li
+                      key={w.class_code}
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate">
+                          {title}{" "}
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {w.class_code}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-[var(--color-ember)]">
+                          {Math.round(w.avg)}%
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Link
+                          to="/mentor"
+                          search={{
+                            subject: mentorSubjectFor(title),
+                            prompt: mentorPromptFor(title),
+                          }}
+                          className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          <Sparkles className="h-3 w-3" /> Ask the Mentor
+                        </Link>
+                        {picks.map((p) => (
+                          <a
+                            key={p.id}
+                            href={p.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            <BookOpen className="h-3 w-3 shrink-0" />{" "}
+                            <span className="truncate">{p.title}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
         </div>
 
-
         <div className="grid gap-6 md:grid-cols-3">
-          <form onSubmit={handleEnroll} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <form
+            onSubmit={handleEnroll}
+            className="rounded-2xl border border-border bg-card p-6 shadow-sm"
+          >
             <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-parchment)] text-[var(--color-ink)]">
               <BookOpen className="h-5 w-5" />
             </div>
@@ -278,7 +348,9 @@ function StudentDashboard() {
             <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-parchment)] text-[var(--color-ink)]">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <h2 id="my-classes" className="scroll-mt-32 font-display text-xl text-foreground">My Classes</h2>
+            <h2 id="my-classes" className="scroll-mt-32 font-display text-xl text-foreground">
+              My Classes
+            </h2>
             {loading ? (
               <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
             ) : classes.length === 0 ? (
@@ -351,7 +423,6 @@ function StudentDashboard() {
           </form>
         </div>
       </main>
-
     </div>
   );
 }

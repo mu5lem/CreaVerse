@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-
 const bodySchema = z.object({
   subject: z.string().min(1).max(40),
   lang: z.enum(["en", "ur"]),
@@ -12,7 +11,7 @@ const bodySchema = z.object({
       z.object({
         role: z.enum(["user", "assistant"]),
         content: z.string().min(1).max(4000),
-      })
+      }),
     )
     .max(20)
     .default([]),
@@ -38,9 +37,12 @@ export const askMentor = createServerFn({ method: "POST" })
         : "Respond in clear, concise English.";
 
     const levelInstruction = {
-      school: "The learner is at school level (Matric / O-Level / grades 6-10). Keep explanations simple with everyday examples.",
-      college: "The learner is at college level (FSc / A-Level / grades 11-12, MDCAT/ECAT prep). Use precise terminology.",
-      university: "The learner is at university level. You may use advanced concepts, derivations, and references.",
+      school:
+        "The learner is at school level (Matric / O-Level / grades 6-10). Keep explanations simple with everyday examples.",
+      college:
+        "The learner is at college level (FSc / A-Level / grades 11-12, MDCAT/ECAT prep). Use precise terminology.",
+      university:
+        "The learner is at university level. You may use advanced concepts, derivations, and references.",
     }[data.level];
 
     const isCareer = data.subject.toLowerCase().includes("career");
@@ -70,8 +72,6 @@ How to behave:
 - Where genuinely relevant, you can mention Pakistani curriculum context (Federal/Punjab Board, MDCAT, ECAT, HEC), but never force it.
 - Never refuse a genuine learning question. Be encouraging and never condescending.${careerAddon}`;
 
-
-
     const messages = [
       { role: "system", content: systemPrompt },
       ...data.history.map((m) => ({ role: m.role, content: m.content })),
@@ -92,7 +92,10 @@ How to behave:
       });
 
       if (res.status === 429) {
-        return { ok: false as const, error: "Rate limit reached. Please wait a moment and try again." };
+        return {
+          ok: false as const,
+          error: "Rate limit reached. Please wait a moment and try again.",
+        };
       }
       if (res.status === 402) {
         return { ok: false as const, error: "AI credits exhausted. Please contact the admin." };

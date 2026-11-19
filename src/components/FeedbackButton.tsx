@@ -110,13 +110,12 @@ export function FeedbackButton() {
 
   const neverAgain = async () => {
     if (user) {
-      await supabase
-        .from("profiles")
-        .update({ feedback_prompt_dismissed: true })
-        .eq("id", user.id);
+      await supabase.from("profiles").update({ feedback_prompt_dismissed: true }).eq("id", user.id);
       await refreshProfile();
     }
-    toast.message("We won't ask you automatically again. You can still open feedback from the top bar anytime.");
+    toast.message(
+      "We won't ask you automatically again. You can still open feedback from the top bar anytime.",
+    );
     setOpen(false);
   };
 
@@ -153,7 +152,8 @@ export function FeedbackButton() {
             </div>
             {mode === "auto" && (
               <p className="mb-3 text-xs text-muted-foreground">
-                We check in every few days. You can silence this popup below — the Feedback button up top will still work.
+                We check in every few days. You can silence this popup below — the Feedback button
+                up top will still work.
               </p>
             )}
             <div className="mb-4 flex gap-1">
@@ -167,7 +167,9 @@ export function FeedbackButton() {
                 >
                   <Star
                     className={`h-6 w-6 transition ${
-                      n <= rating ? "fill-[var(--color-ember)] text-[var(--color-ember)]" : "text-muted-foreground"
+                      n <= rating
+                        ? "fill-[var(--color-ember)] text-[var(--color-ember)]"
+                        : "text-muted-foreground"
                     }`}
                   />
                 </button>

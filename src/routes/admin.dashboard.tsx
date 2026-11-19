@@ -33,7 +33,9 @@ function AdminDashboard() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ id: string; rating: number; comments: string | null; created_at: string; email: string }[]>([]);
+  const [feedback, setFeedback] = useState<
+    { id: string; rating: number; comments: string | null; created_at: string; email: string }[]
+  >([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,8 +121,16 @@ function AdminDashboard() {
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
           {[
             { label: "Total Users", value: rows.length, icon: Users },
-            { label: "Teachers", value: rows.filter((r) => r.role === "teacher").length, icon: School },
-            { label: "Students", value: rows.filter((r) => r.role === "student").length, icon: GraduationCap },
+            {
+              label: "Teachers",
+              value: rows.filter((r) => r.role === "teacher").length,
+              icon: School,
+            },
+            {
+              label: "Students",
+              value: rows.filter((r) => r.role === "student").length,
+              icon: GraduationCap,
+            },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
@@ -130,7 +140,6 @@ function AdminDashboard() {
             </div>
           ))}
         </div>
-
 
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           <div className="overflow-x-auto">
@@ -164,15 +173,15 @@ function AdminDashboard() {
                     <tr key={r.id}>
                       <td className="px-4 py-3 text-foreground">{r.full_name ?? "—"}</td>
                       <td className="px-4 py-3 font-medium text-foreground">{r.email}</td>
-                      <td className="px-4 py-3 text-muted-foreground capitalize">{r.gender ? r.gender.replace(/_/g, " ") : "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground capitalize">
+                        {r.gender ? r.gender.replace(/_/g, " ") : "—"}
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">{r.school ?? "—"}</td>
                       <td className="px-4 py-3">
                         <select
                           value={r.role}
                           disabled={busyId === r.id}
-                          onChange={(e) =>
-                            setStatus(r, { role: e.target.value as Role })
-                          }
+                          onChange={(e) => setStatus(r, { role: e.target.value as Role })}
                           className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                         >
                           <option value="student">student</option>
@@ -194,9 +203,7 @@ function AdminDashboard() {
                       <td className="px-4 py-3">
                         <button
                           disabled={busyId === r.id}
-                          onClick={() =>
-                            setStatus(r, { is_suspended: !r.is_suspended })
-                          }
+                          onClick={() => setStatus(r, { is_suspended: !r.is_suspended })}
                           className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition hover:bg-secondary disabled:opacity-60"
                         >
                           {r.is_suspended ? "Activate" : "Suspend"}
@@ -215,15 +222,13 @@ function AdminDashboard() {
 
         <section id="my-classes" className="scroll-mt-32">
           <h2 className="mt-10 font-display text-xl text-foreground">My Classes</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Classroom activity across your teachers.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Classroom activity across your teachers.
+          </p>
           <TeacherActivitySection />
         </section>
 
         <OnboardingResponsesSection />
-
-
-
-
 
         <div className="mt-10">
           <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
@@ -241,12 +246,11 @@ function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">{f.email}</span>
                     <span className="text-xs text-[var(--color-ember)]">
-                      {"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}
+                      {"★".repeat(f.rating)}
+                      {"☆".repeat(5 - f.rating)}
                     </span>
                   </div>
-                  {f.comments && (
-                    <p className="mt-2 text-sm text-muted-foreground">{f.comments}</p>
-                  )}
+                  {f.comments && <p className="mt-2 text-sm text-muted-foreground">{f.comments}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {new Date(f.created_at).toLocaleString()}
                   </p>
@@ -271,7 +275,16 @@ interface InviteCode {
 }
 
 function TeacherRequestsSection() {
-  const [reqs, setReqs] = useState<{ id: string; user_id: string; school_name: string | null; status: string; created_at: string; name: string }[]>([]);
+  const [reqs, setReqs] = useState<
+    {
+      id: string;
+      user_id: string;
+      school_name: string | null;
+      status: string;
+      created_at: string;
+      name: string;
+    }[]
+  >([]);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -283,20 +296,27 @@ function TeacherRequestsSection() {
     const ids = [...new Set((data ?? []).map((r) => r.user_id))];
     const names = new Map<string, string>();
     if (ids.length) {
-      const { data: profs } = await supabase.from("profiles").select("id, full_name, username, email").in("id", ids);
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, email")
+        .in("id", ids);
       (profs ?? []).forEach((p) => names.set(p.id, p.full_name || p.username || p.email));
     }
     setReqs((data ?? []).map((r) => ({ ...r, name: names.get(r.user_id) ?? "Unknown user" })));
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const decide = async (id: string, userId: string, approve: boolean) => {
     setBusy(id);
     try {
       if (approve) {
         const { error } = await supabase.rpc("admin_set_user_status", {
-          target_user_id: userId, new_role: "teacher", new_is_suspended: false,
+          target_user_id: userId,
+          new_role: "teacher",
+          new_is_suspended: false,
         });
         if (error) throw error;
       }
@@ -324,17 +344,33 @@ function TeacherRequestsSection() {
       ) : (
         <ul className="mt-4 divide-y divide-border">
           {reqs.map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+            <li
+              key={r.id}
+              className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
+            >
               <div>
                 <div className="font-medium text-foreground">{r.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  {r.school_name || "No school given"} · {new Date(r.created_at).toLocaleDateString()} · {r.status}
+                  {r.school_name || "No school given"} ·{" "}
+                  {new Date(r.created_at).toLocaleDateString()} · {r.status}
                 </div>
               </div>
               {r.status === "pending" && (
                 <div className="flex gap-2">
-                  <button disabled={busy === r.id} onClick={() => decide(r.id, r.user_id, true)} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60">Approve</button>
-                  <button disabled={busy === r.id} onClick={() => decide(r.id, r.user_id, false)} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-60">Deny</button>
+                  <button
+                    disabled={busy === r.id}
+                    onClick={() => decide(r.id, r.user_id, true)}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    disabled={busy === r.id}
+                    onClick={() => decide(r.id, r.user_id, false)}
+                    className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-60"
+                  >
+                    Deny
+                  </button>
                 </div>
               )}
             </li>
@@ -364,7 +400,9 @@ function InviteCodesSection() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const generateCode = () => {
     const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
@@ -493,48 +531,62 @@ function InviteCodesSection() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                    Loading…
+                  </td>
+                </tr>
               ) : codes.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">No invite codes yet.</td></tr>
-              ) : codes.map((c) => {
-                const expired = c.expires_at ? new Date(c.expires_at) < new Date() : false;
-                const exhausted = c.uses >= c.max_uses;
-                const usable = c.active && !expired && !exhausted;
-                return (
-                  <tr key={c.id}>
-                    <td className="px-4 py-3 font-mono text-foreground">{c.code}</td>
-                    <td className="px-4 py-3 text-foreground">{c.uses} / {c.max_uses}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "Never"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {usable ? (
-                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700">Active</span>
-                      ) : (
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                          {!c.active ? "Disabled" : expired ? "Expired" : "Exhausted"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => toggleActive(c)}
-                          className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium hover:bg-secondary"
-                        >
-                          {c.active ? "Disable" : "Enable"}
-                        </button>
-                        <button
-                          onClick={() => remove(c)}
-                          className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-background px-3 py-1 text-xs font-medium text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-3 w-3" /> Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                    No invite codes yet.
+                  </td>
+                </tr>
+              ) : (
+                codes.map((c) => {
+                  const expired = c.expires_at ? new Date(c.expires_at) < new Date() : false;
+                  const exhausted = c.uses >= c.max_uses;
+                  const usable = c.active && !expired && !exhausted;
+                  return (
+                    <tr key={c.id}>
+                      <td className="px-4 py-3 font-mono text-foreground">{c.code}</td>
+                      <td className="px-4 py-3 text-foreground">
+                        {c.uses} / {c.max_uses}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "Never"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {usable ? (
+                          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                            {!c.active ? "Disabled" : expired ? "Expired" : "Exhausted"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => toggleActive(c)}
+                            className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium hover:bg-secondary"
+                          >
+                            {c.active ? "Disable" : "Enable"}
+                          </button>
+                          <button
+                            onClick={() => remove(c)}
+                            className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-background px-3 py-1 text-xs font-medium text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3 w-3" /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -560,12 +612,22 @@ function TeacherActivitySection() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data: teachers }, { data: classes }, { data: assignments }, { data: enrollments }, { data: chats }] = await Promise.all([
+      const [
+        { data: teachers },
+        { data: classes },
+        { data: assignments },
+        { data: enrollments },
+        { data: chats },
+      ] = await Promise.all([
         supabase.from("profiles").select("id, email, full_name").eq("role", "teacher"),
         supabase.from("classes").select("class_code, teacher_id, created_at"),
         supabase.from("assignments").select("class_code, created_at"),
         supabase.from("enrollments").select("class_code, student_id"),
-        supabase.from("chat_messages").select("class_code, created_at").order("created_at", { ascending: false }).limit(500),
+        supabase
+          .from("chat_messages")
+          .select("class_code, created_at")
+          .order("created_at", { ascending: false })
+          .limit(500),
       ]);
 
       const codesByTeacher = new Map<string, string[]>();
@@ -588,7 +650,9 @@ function TeacherActivitySection() {
       (chats ?? []).forEach((m) => bump(teacherByCode.get(m.class_code), m.created_at));
 
       const assignmentCountByCode = new Map<string, number>();
-      (assignments ?? []).forEach((a) => assignmentCountByCode.set(a.class_code, (assignmentCountByCode.get(a.class_code) ?? 0) + 1));
+      (assignments ?? []).forEach((a) =>
+        assignmentCountByCode.set(a.class_code, (assignmentCountByCode.get(a.class_code) ?? 0) + 1),
+      );
 
       const studentsByTeacher = new Map<string, Set<string>>();
       (enrollments ?? []).forEach((e) => {
@@ -599,20 +663,22 @@ function TeacherActivitySection() {
         studentsByTeacher.set(tid, set);
       });
 
-      const built: TeacherRow[] = (teachers ?? []).map((t) => {
-        const codes = codesByTeacher.get(t.id) ?? [];
-        const asgn = codes.reduce((n, code) => n + (assignmentCountByCode.get(code) ?? 0), 0);
-        const last = lastByTeacher.get(t.id);
-        return {
-          id: t.id,
-          email: t.email,
-          full_name: t.full_name,
-          classCount: codes.length,
-          assignmentCount: asgn,
-          studentCount: studentsByTeacher.get(t.id)?.size ?? 0,
-          lastActivity: last ? new Date(last).toISOString() : null,
-        };
-      }).sort((a, b) => (b.lastActivity ?? "").localeCompare(a.lastActivity ?? ""));
+      const built: TeacherRow[] = (teachers ?? [])
+        .map((t) => {
+          const codes = codesByTeacher.get(t.id) ?? [];
+          const asgn = codes.reduce((n, code) => n + (assignmentCountByCode.get(code) ?? 0), 0);
+          const last = lastByTeacher.get(t.id);
+          return {
+            id: t.id,
+            email: t.email,
+            full_name: t.full_name,
+            classCount: codes.length,
+            assignmentCount: asgn,
+            studentCount: studentsByTeacher.get(t.id)?.size ?? 0,
+            lastActivity: last ? new Date(last).toISOString() : null,
+          };
+        })
+        .sort((a, b) => (b.lastActivity ?? "").localeCompare(a.lastActivity ?? ""));
 
       setRows(built);
       setLoading(false);
@@ -640,23 +706,33 @@ function TeacherActivitySection() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">No teachers yet.</td></tr>
-              ) : rows.map((r) => (
-                <tr key={r.id}>
-                  <td className="px-4 py-3">
-                    <div className="text-foreground">{r.full_name ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">{r.email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-foreground">{r.classCount}</td>
-                  <td className="px-4 py-3 text-foreground">{r.assignmentCount}</td>
-                  <td className="px-4 py-3 text-foreground">{r.studentCount}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {r.lastActivity ? new Date(r.lastActivity).toLocaleString() : "—"}
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                    Loading…
                   </td>
                 </tr>
-              ))}
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                    No teachers yet.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => (
+                  <tr key={r.id}>
+                    <td className="px-4 py-3">
+                      <div className="text-foreground">{r.full_name ?? "—"}</div>
+                      <div className="text-xs text-muted-foreground">{r.email}</div>
+                    </td>
+                    <td className="px-4 py-3 text-foreground">{r.classCount}</td>
+                    <td className="px-4 py-3 text-foreground">{r.assignmentCount}</td>
+                    <td className="px-4 py-3 text-foreground">{r.studentCount}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {r.lastActivity ? new Date(r.lastActivity).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -698,15 +774,17 @@ function OnboardingResponsesSection() {
         const { data: profs } = await supabase.from("profiles").select("id, email").in("id", uids);
         emails = new Map((profs ?? []).map((p) => [p.id, p.email]));
       }
-      setRows((data ?? []).map((r) => ({
-        id: r.id,
-        created_at: r.created_at,
-        purpose: r.purpose,
-        discovery_source: r.discovery_source,
-        age_group: r.age_group,
-        biggest_challenge: r.biggest_challenge,
-        email: emails.get(r.user_id) ?? r.user_id,
-      })));
+      setRows(
+        (data ?? []).map((r) => ({
+          id: r.id,
+          created_at: r.created_at,
+          purpose: r.purpose,
+          discovery_source: r.discovery_source,
+          age_group: r.age_group,
+          biggest_challenge: r.biggest_challenge,
+          email: emails.get(r.user_id) ?? r.user_id,
+        })),
+      );
       setLoading(false);
     })();
   }, []);
@@ -733,19 +811,33 @@ function OnboardingResponsesSection() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">No responses yet.</td></tr>
-              ) : rows.map((r) => (
-                <tr key={r.id}>
-                  <td className="px-4 py-3 text-foreground">{r.email}</td>
-                  <td className="px-4 py-3 text-foreground">{r.purpose ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.discovery_source ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.age_group ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground max-w-md">{r.biggest_challenge ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                    Loading…
+                  </td>
                 </tr>
-              ))}
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                    No responses yet.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => (
+                  <tr key={r.id}>
+                    <td className="px-4 py-3 text-foreground">{r.email}</td>
+                    <td className="px-4 py-3 text-foreground">{r.purpose ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.discovery_source ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.age_group ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground max-w-md">
+                      {r.biggest_challenge ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {new Date(r.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -753,4 +845,3 @@ function OnboardingResponsesSection() {
     </div>
   );
 }
-

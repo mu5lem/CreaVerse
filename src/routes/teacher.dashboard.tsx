@@ -42,7 +42,9 @@ function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: "", class_code: "", grade: "", description: "" });
   const [creating, setCreating] = useState(false);
-  const [atRiskRows, setAtRiskRows] = useState<{ student_id: string; email: string; avg: number }[]>([]);
+  const [atRiskRows, setAtRiskRows] = useState<
+    { student_id: string; email: string; avg: number }[]
+  >([]);
   const [pendingDelete, setPendingDelete] = useState<ClassRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -55,13 +57,16 @@ function TeacherDashboard() {
       .eq("teacher_id", user.id)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
-    const classList = ((data ?? []) as ClassRow[]);
+    const classList = (data ?? []) as ClassRow[];
     setClasses(classList);
 
     // At-risk students: pull submissions for teacher's assignments
     const codes = classList.map((c) => c.class_code);
     if (codes.length > 0) {
-      const { data: assigns } = await supabase.from("assignments").select("id").in("class_code", codes);
+      const { data: assigns } = await supabase
+        .from("assignments")
+        .select("id")
+        .in("class_code", codes);
       const aids = (assigns ?? []).map((a) => a.id);
       if (aids.length > 0) {
         const { data: subs } = await supabase
@@ -80,7 +85,10 @@ function TeacherDashboard() {
         const studentIds = [...byStudent.keys()];
         let emails = new Map<string, string>();
         if (studentIds.length > 0) {
-          const { data: profs } = await supabase.from("profiles").select("id, email").in("id", studentIds);
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("id, email")
+            .in("id", studentIds);
           emails = new Map((profs ?? []).map((p) => [p.id, p.email]));
         }
         const risk = [...byStudent.entries()]
@@ -171,7 +179,9 @@ function TeacherDashboard() {
             <span className="text-xs">— average grade below 60%</span>
           </div>
           {atRiskRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No at-risk students detected. Great work!</p>
+            <p className="text-sm text-muted-foreground">
+              No at-risk students detected. Great work!
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {atRiskRows.map((r) => (
@@ -195,9 +205,7 @@ function TeacherDashboard() {
               <PlusCircle className="h-5 w-5" />
             </div>
             <h2 className="font-display text-xl text-foreground">Create a Class</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Students join with the class code.
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Students join with the class code.</p>
             <div className="mt-4 space-y-3">
               <input
                 required
@@ -268,9 +276,7 @@ function TeacherDashboard() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <h2 className="mt-3 font-display text-lg text-foreground">{c.title}</h2>
-                      {c.grade && (
-                        <p className="text-xs text-muted-foreground">{c.grade}</p>
-                      )}
+                      {c.grade && <p className="text-xs text-muted-foreground">{c.grade}</p>}
                       {c.description && (
                         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                           {c.description}
@@ -282,7 +288,11 @@ function TeacherDashboard() {
                     </Link>
                     <button
                       type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingDelete(c); }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setPendingDelete(c);
+                      }}
                       title="Delete class"
                       className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground opacity-0 transition hover:border-destructive/50 hover:text-destructive group-hover:opacity-100"
                     >
@@ -302,14 +312,22 @@ function TeacherDashboard() {
             <AlertDialogTitle>Delete this class?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete && (
-                <>Delete class <span className="font-medium text-foreground">"{pendingDelete.title}"</span> ({pendingDelete.class_code})? This permanently removes its enrollments, assignments and submissions.</>
+                <>
+                  Delete class{" "}
+                  <span className="font-medium text-foreground">"{pendingDelete.title}"</span> (
+                  {pendingDelete.class_code})? This permanently removes its enrollments, assignments
+                  and submissions.
+                </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
               disabled={deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

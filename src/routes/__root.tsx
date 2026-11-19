@@ -21,7 +21,6 @@ import { OnboardingGate } from "../components/OnboardingGate";
 import { registerServiceWorker } from "../lib/register-sw";
 import { FooterLinks } from "../components/FooterLinks";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -126,12 +125,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             {
               "@type": "Organization",
               name: brand.name,
-              url: "https://spark-creaverse.lovable.app/",
+              url: `${brand.siteUrl}/`,
             },
             {
               "@type": "WebSite",
               name: brand.name,
-              url: "https://spark-creaverse.lovable.app/",
+              url: `${brand.siteUrl}/`,
             },
           ],
         }),
@@ -166,7 +165,9 @@ function RootComponent() {
       const theme = window.localStorage.getItem("creaverse:theme");
       // Only apply a theme if the user has explicitly chosen one — otherwise the OnboardingGate will prompt.
       if (theme) {
-        const dark = theme === "dark" || (theme === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+        const dark =
+          theme === "dark" ||
+          (theme === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
         document.documentElement.classList.toggle("dark", dark);
       }
     } catch {

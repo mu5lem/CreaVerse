@@ -43,7 +43,8 @@ export function QuizGradePanel({ questions, answers, marks, onChange }: Props) {
           >
             <div className="mb-2 flex items-start justify-between gap-3">
               <div className="text-sm font-medium text-foreground">
-                <span className="text-muted-foreground">Q{idx + 1}.</span> {q.prompt || <span className="italic text-muted-foreground">(no prompt)</span>}
+                <span className="text-muted-foreground">Q{idx + 1}.</span>{" "}
+                {q.prompt || <span className="italic text-muted-foreground">(no prompt)</span>}
               </div>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {q.points} pt{q.points === 1 ? "" : "s"}

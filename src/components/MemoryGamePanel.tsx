@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 const EMOJIS = ["🧠", "📚", "🔬", "🧮", "⚗️", "🔭", "🎓", "✏️"];
 
-interface Card { id: number; emoji: string; flipped: boolean; matched: boolean }
+interface Card {
+  id: number;
+  emoji: string;
+  flipped: boolean;
+  matched: boolean;
+}
 
 function shuffle(): Card[] {
   const pairs = [...EMOJIS, ...EMOJIS];
@@ -46,7 +51,11 @@ export function MemoryGamePanel() {
     setPicked((p) => [...p, i]);
   };
 
-  const reset = () => { setCards(shuffle()); setPicked([]); setMoves(0); };
+  const reset = () => {
+    setCards(shuffle());
+    setPicked([]);
+    setMoves(0);
+  };
 
   if (!profile) return null;
 
@@ -55,8 +64,12 @@ export function MemoryGamePanel() {
       <main className="mx-auto max-w-3xl px-6 pb-16">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">Memory Match</h1>
-            <p className="mt-2 text-muted-foreground">Flip cards to find matching pairs. Try to finish in as few moves as possible.</p>
+            <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
+              Memory Match
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Flip cards to find matching pairs. Try to finish in as few moves as possible.
+            </p>
           </div>
           <div className="text-right">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Moves</div>
@@ -75,20 +88,25 @@ export function MemoryGamePanel() {
             <button
               key={c.id}
               onClick={() => flip(i)}
-              aria-label={c.flipped || c.matched ? `Card showing ${c.emoji}` : "Face-down memory card"}
+              aria-label={
+                c.flipped || c.matched ? `Card showing ${c.emoji}` : "Face-down memory card"
+              }
               className={`aspect-square rounded-2xl border text-4xl transition ${
                 c.flipped || c.matched
                   ? "border-[var(--color-ember)]/50 bg-card"
                   : "border-border bg-[var(--color-parchment)] hover:bg-[var(--color-parchment)]/70"
               } ${c.matched ? "opacity-60" : ""}`}
             >
-              {(c.flipped || c.matched) ? c.emoji : ""}
+              {c.flipped || c.matched ? c.emoji : ""}
             </button>
           ))}
         </div>
 
         <div className="mt-6 text-center">
-          <button onClick={reset} className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90">
+          <button
+            onClick={reset}
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
             New game
           </button>
         </div>

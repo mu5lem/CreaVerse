@@ -7,9 +7,16 @@ export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
       { title: "FAQs — Common Questions | CreaVerse" },
-      { name: "description", content: "Answers to common CreaVerse questions: joining classes, becoming a teacher, AI Mentor, grading, privacy, and more." },
+      {
+        name: "description",
+        content:
+          "Answers to common CreaVerse questions: joining classes, becoming a teacher, AI Mentor, grading, privacy, and more.",
+      },
       { property: "og:title", content: "CreaVerse FAQs" },
-      { property: "og:description", content: "Quick answers about using CreaVerse — classes, teachers, AI Mentor, and privacy." },
+      {
+        property: "og:description",
+        content: "Quick answers about using CreaVerse — classes, teachers, AI Mentor, and privacy.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/faq" },
       { name: "twitter:card", content: "summary" },
@@ -48,6 +55,10 @@ const faqs = [
     a: "Teachers grade each student's submission per assignment — you'll see the grade and any written feedback on the assignment card in your class view.",
   },
   {
+    q: "What are School-in-a-Box, Outreach and Mind Garden?",
+    a: "CreaVerse has three groups. School-in-a-Box is the core: the AI Mentor, the Academy of free pathways, and your Classroom. Outreach brings opportunities, contests and communities together in one directory. Mind Garden holds your private journal and a memory game.",
+  },
+  {
     q: "What is the AI Mentor?",
     a: "A private tutor powered by AI. Pick a subject and level (school, college, university), then chat naturally — it answers in English or Urdu with worked examples.",
   },
@@ -77,16 +88,24 @@ function FaqPage() {
           <BookLogo size={32} className="text-[var(--color-ink)]" />
           <span className="font-display text-xl font-semibold text-foreground">{brand.name}</span>
         </Link>
-        <Link to="/" className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-secondary">
+        <Link
+          to="/"
+          className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
+        >
           Back home
         </Link>
       </div>
       <main className="mx-auto max-w-4xl px-6 pb-16">
-        <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">Frequently Asked Questions</h1>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
+          Frequently Asked Questions
+        </h1>
         <p className="mt-2 text-muted-foreground">Quick answers about using {brand.name}.</p>
         <div className="mt-8 space-y-3">
           {faqs.map((f) => (
-            <details key={f.q} className="group rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <details
+              key={f.q}
+              className="group rounded-2xl border border-border bg-card p-5 shadow-sm"
+            >
               <summary className="cursor-pointer list-none font-display text-lg text-foreground group-open:text-[var(--color-ember)]">
                 {f.q}
               </summary>

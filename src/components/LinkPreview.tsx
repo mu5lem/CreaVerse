@@ -31,7 +31,7 @@ export function LinkPreview({ url, title }: { url: string; title?: string | null
           className="h-6 w-6"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = "none";
-            const sib = (e.currentTarget.nextElementSibling as HTMLElement | null);
+            const sib = e.currentTarget.nextElementSibling as HTMLElement | null;
             if (sib) sib.style.display = "block";
           }}
         />

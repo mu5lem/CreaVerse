@@ -30,8 +30,14 @@ export function JournalPanel() {
   const { profile, user } = useAuth();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [mood, setMood] = useState<string>(MOODS[1]);
-  const [content, setContent, clearContent] = useDraft(user ? `draft:journal:${user.id}` : "draft:journal:anon");
-  const [assessment, setAssessment] = useState<SelfAssessment>({ focus: 3, understanding: 3, confidence: 3 });
+  const [content, setContent, clearContent] = useDraft(
+    user ? `draft:journal:${user.id}` : "draft:journal:anon",
+  );
+  const [assessment, setAssessment] = useState<SelfAssessment>({
+    focus: 3,
+    understanding: 3,
+    confidence: 3,
+  });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -78,9 +84,15 @@ export function JournalPanel() {
     if (!user) return;
     const channel = supabase
       .channel(`journal-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "journal_entries", filter: `user_id=eq.${user.id}` }, () => load())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "journal_entries", filter: `user_id=eq.${user.id}` },
+        () => load(),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, load]);
 
   const save = async (e: React.FormEvent) => {
@@ -111,7 +123,6 @@ export function JournalPanel() {
     clearContent();
   };
 
-
   const confirm = useConfirm();
 
   const beginEdit = (e: Entry) => {
@@ -137,7 +148,11 @@ export function JournalPanel() {
 
   const deleteEntry = async (id: string) => {
     if (!user) return;
-    const ok = await confirm({ title: "Delete this journal entry?", confirmText: "Delete", destructive: true });
+    const ok = await confirm({
+      title: "Delete this journal entry?",
+      confirmText: "Delete",
+      destructive: true,
+    });
     if (!ok) return;
     // Optimistic removal.
     const snapshot = entries;
@@ -154,7 +169,6 @@ export function JournalPanel() {
     toast.success("Deleted");
   };
 
-
   if (!profile) return null;
 
   return (
@@ -164,8 +178,12 @@ export function JournalPanel() {
           <div className="inline-flex items-center gap-2 rounded-full bg-[var(--color-parchment)] px-3 py-1 text-xs font-medium">
             <NotebookPen className="h-3.5 w-3.5" /> Private to you
           </div>
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-foreground">How was today?</h1>
-          <p className="mt-2 text-muted-foreground">Reflect daily. Only you can read these entries.</p>
+          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-foreground">
+            How was today?
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Reflect daily. Only you can read these entries.
+          </p>
         </div>
 
         {/* Water intake tracker */}
@@ -177,7 +195,9 @@ export function JournalPanel() {
               </div>
               <div>
                 <div className="font-display text-lg text-foreground">Water today</div>
-                <div className="text-[11px] text-muted-foreground">Goal: {WATER_GOAL} glasses · {water}/{WATER_GOAL}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Goal: {WATER_GOAL} glasses · {water}/{WATER_GOAL}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -225,8 +245,12 @@ export function JournalPanel() {
         <form onSubmit={save} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-3 flex flex-wrap gap-2">
             {MOODS.map((m) => (
-              <button key={m} type="button" onClick={() => setMood(m)}
-                className={`rounded-full border px-3 py-1.5 text-sm transition ${mood === m ? "border-[var(--color-ember)] bg-[var(--color-ember)]/10 text-foreground" : "border-border text-muted-foreground hover:border-foreground/30"}`}>
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMood(m)}
+                className={`rounded-full border px-3 py-1.5 text-sm transition ${mood === m ? "border-[var(--color-ember)] bg-[var(--color-ember)]/10 text-foreground" : "border-border text-muted-foreground hover:border-foreground/30"}`}
+              >
                 {m}
               </button>
             ))}
@@ -236,12 +260,19 @@ export function JournalPanel() {
               <label key={a.key} className="flex flex-col gap-1 text-xs">
                 <span className="flex items-center justify-between text-foreground">
                   <span className="font-medium">{a.label}</span>
-                  <span className="rounded bg-[var(--color-parchment)] px-1.5 font-mono text-[10px]">{assessment[a.key]}/5</span>
+                  <span className="rounded bg-[var(--color-parchment)] px-1.5 font-mono text-[10px]">
+                    {assessment[a.key]}/5
+                  </span>
                 </span>
                 <input
-                  type="range" min={1} max={5} step={1}
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={1}
                   value={assessment[a.key]}
-                  onChange={(ev) => setAssessment({ ...assessment, [a.key]: Number(ev.target.value) })}
+                  onChange={(ev) =>
+                    setAssessment({ ...assessment, [a.key]: Number(ev.target.value) })
+                  }
                   className="w-full accent-[var(--color-ember)]"
                 />
                 <span className="text-[10px] text-muted-foreground">{a.hint}</span>
@@ -255,8 +286,11 @@ export function JournalPanel() {
             rows={5}
             className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
           />
-          <button type="submit" disabled={saving || !content.trim()}
-            className="mt-3 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={saving || !content.trim()}
+            className="mt-3 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+          >
             {saving ? "Saving…" : "Save entry"}
           </button>
         </form>
@@ -279,7 +313,10 @@ export function JournalPanel() {
                 {e.self_assessment && (
                   <div className="mb-2 flex flex-wrap gap-2 text-[10px]">
                     {ASSESSMENTS.map((a) => (
-                      <span key={a.key} className="rounded-full bg-[var(--color-parchment)] px-2 py-0.5 font-medium text-foreground">
+                      <span
+                        key={a.key}
+                        className="rounded-full bg-[var(--color-parchment)] px-2 py-0.5 font-medium text-foreground"
+                      >
                         {a.label}: {e.self_assessment?.[a.key]}/5
                       </span>
                     ))}

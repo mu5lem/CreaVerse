@@ -1,17 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { BookLogo } from "@/components/BookLogo";
-import { ContactHub } from "@/components/ContactHub";
 import { useAuth } from "@/hooks/useAuth";
 import { brand } from "@/lib/brand";
 import {
   Sparkles,
-  MessagesSquare,
-  Boxes,
+  BookOpen,
+  Users,
   Compass,
-  Trophy,
+  Flower2,
   GraduationCap,
+  Bot,
+  Trophy,
   NotebookPen,
+  Gamepad2,
+  MessagesSquare,
   LineChart,
 } from "lucide-react";
 
@@ -23,7 +26,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "CreaVerse is a Pakistan-first learning platform for students, teachers, and creators — quality education, AI mentorship, and live classrooms for every learner.",
+          "CreaVerse is a Pakistan-first learning platform with three parts: School-in-a-Box (AI Mentor, Academy, Classroom), Outreach (opportunities, contests, community) and Mind Garden (journal and memory game).",
       },
 
       { property: "og:title", content: "CreaVerse — Education for Everyone" },
@@ -33,7 +36,7 @@ export const Route = createFileRoute("/")({
           "Learn, visualize, and build things. A learning universe for Pakistani students and teachers, from Matric to university.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://spark-creaverse.lovable.app/" },
+      { property: "og:url", content: `${brand.siteUrl}/` },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "CreaVerse — Education for Everyone" },
       {
@@ -41,10 +44,9 @@ export const Route = createFileRoute("/")({
         content: "Learn, visualize, and build things — a learning universe for everyone.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://spark-creaverse.lovable.app/" }],
+    links: [{ rel: "canonical", href: `${brand.siteUrl}/` }],
   }),
 });
-
 
 const roleHome = {
   student: "/student/dashboard",
@@ -96,7 +98,6 @@ function Landing() {
         </div>
       </nav>
 
-
       {/* hero */}
       <section className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
         <div className="flex flex-col items-center text-center">
@@ -115,8 +116,8 @@ function Landing() {
             Learn, Visualize, and Build Things.
           </p>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            {brand.name} is where students, teachers, and creators come together —
-            from Matric to university, with AI mentorship and live classrooms.
+            {brand.name} is where students, teachers, and creators come together — from Matric to
+            university, with AI mentorship and live classrooms.
           </p>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
@@ -137,57 +138,114 @@ function Landing() {
           </div>
         </div>
 
-        {/* Why CreaVerse — feature grid */}
+        {/* Three groups */}
         <div className="mt-24">
           <div className="mb-10 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-[var(--color-parchment)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Why CreaVerse
+              What's inside
             </div>
             <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Everything you need to actually learn
+              Three places, one platform
             </h2>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: Sparkles, title: "AI Mentor", body: "24/7 tutor that answers, explains and remembers your progress." },
-              { icon: MessagesSquare, title: "Classroom & Realtime Chat", body: "Join classes, message teachers and classmates instantly." },
-              { icon: Boxes, title: "Quizzes & Assignments", body: "Teachers post work, quizzes grade themselves instantly." },
-              { icon: Compass, title: "Opportunity Hub", body: "Curated scholarships, competitions and internships." },
-              { icon: Trophy, title: "Contests", body: "Live student contests with recognition and prizes." },
-              { icon: GraduationCap, title: "Academy", body: "Free structured courses from Matric to university." },
-              { icon: NotebookPen, title: "Daily Journal", body: "Reflect, track mood and build a real learning habit." },
-              { icon: LineChart, title: "Analytics", body: "Predictive success score and at-risk detection." },
-            ].map((f, i) => (
-              <div
-                key={f.title}
-                style={{ animationDelay: `${i * 40}ms` }}
-                className="hover-lift animate-fade-up rounded-2xl border border-border bg-card p-5 shadow-sm"
-              >
-                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-parchment)]">
-                  <f.icon className="h-5 w-5 text-[var(--color-ember)]" />
-                </div>
-                <h3 className="font-display text-base text-foreground">{f.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                  {f.body}
+
+          {/* School-in-a-Box (featured) */}
+          <section className="animate-fade-up rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-10">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-parchment)]">
+                <GraduationCap className="h-6 w-6 text-[var(--color-ember)]" />
+              </div>
+              <div>
+                <h3 className="font-display text-2xl text-foreground sm:text-3xl">
+                  School-in-a-Box
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Everything a student needs to learn, in one place.
                 </p>
               </div>
-            ))}
+            </div>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {[
+                {
+                  icon: Bot,
+                  title: "AI Mentor",
+                  body: "A study helper in English or Urdu for any subject, from Matric to university.",
+                },
+                {
+                  icon: BookOpen,
+                  title: "Academy",
+                  body: "Free pathways for Matric, FSc, MDCAT, ECAT, CSS and university, with progress tracking.",
+                },
+                {
+                  icon: Users,
+                  title: "Classroom",
+                  body: "Join classes, chat live, submit assignments, take self-grading quizzes and see your analytics.",
+                },
+              ].map((f) => (
+                <div key={f.title} className="rounded-2xl border border-border bg-background p-5">
+                  <f.icon className="h-5 w-5 text-[var(--color-ember)]" />
+                  <h4 className="mt-3 font-display text-lg text-foreground">{f.title}</h4>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <section className="hover-lift animate-fade-up rounded-3xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <Compass className="h-6 w-6 text-[var(--color-ember)]" />
+                <h3 className="font-display text-xl text-foreground">Outreach</h3>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                One directory to look beyond the classroom.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-foreground">
+                <li className="flex items-center gap-2">
+                  <Compass className="h-4 w-4 text-muted-foreground" /> Opportunities: scholarships,
+                  universities and programs
+                </li>
+                <li className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-muted-foreground" /> Contests and competitions
+                </li>
+                <li className="flex items-center gap-2">
+                  <MessagesSquare className="h-4 w-4 text-muted-foreground" /> Learning communities
+                </li>
+              </ul>
+            </section>
+            <section className="hover-lift animate-fade-up rounded-3xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <Flower2 className="h-6 w-6 text-[var(--color-ember)]" />
+                <h3 className="font-display text-xl text-foreground">Mind Garden</h3>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Slow down, reflect and keep your mind sharp.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-foreground">
+                <li className="flex items-center gap-2">
+                  <NotebookPen className="h-4 w-4 text-muted-foreground" /> Daily journal with mood
+                  tracking and a real streak
+                </li>
+                <li className="flex items-center gap-2">
+                  <Gamepad2 className="h-4 w-4 text-muted-foreground" /> Memory game for a quick
+                  brain break
+                </li>
+                <li className="flex items-center gap-2">
+                  <LineChart className="h-4 w-4 text-muted-foreground" /> Build a steady learning
+                  habit
+                </li>
+              </ul>
+            </section>
           </div>
         </div>
       </section>
 
       <footer className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <ContactHub />
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-xs text-muted-foreground">
-            <span>© {new Date().getFullYear()} {brand.name}</span>
-            <span className="flex gap-4">
-              <Link to="/faq" className="hover:text-foreground">FAQ</Link>
-              <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-              <Link to="/terms" className="hover:text-foreground">Terms</Link>
-            </span>
-            <span className="italic">{brand.tagline}</span>
-          </div>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-6 text-xs text-muted-foreground">
+          <span>
+            © {new Date().getFullYear()} {brand.name}
+          </span>
+          <span>{brand.tagline}</span>
         </div>
       </footer>
     </div>

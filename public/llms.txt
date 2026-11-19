@@ -1,10 +1,14 @@
 # CreaVerse
 
-> A Pakistan-first learning universe for students, teachers, and creators — free courses, AI mentorship, live classrooms, and a directory of scholarships and contests.
+> A Pakistan-first learning platform for students, teachers, and creators, organised into three groups: School-in-a-Box (AI Mentor, Academy, Classroom), Outreach (opportunities, contests, community) and Mind Garden (journal and memory game).
 
-CreaVerse helps learners from Matric and FSc through university and competitive exams, with a focus on underprivileged regions of Pakistan. It also curates global opportunities.
+CreaVerse helps learners from Matric and FSc through university and competitive exams, with a focus on underprivileged regions of Pakistan. It is free and open source (MIT).
 
 ## Pages
 
-- [Home](/): Overview of CreaVerse and how it helps students and teachers.
+- [Home](/): Overview of the three groups.
 - [About](/about): Mission, motto, and the story behind CreaVerse.
+- [FAQ](/faq): Common questions about classes, teachers, privacy and the AI Mentor.
+- [Contact](/contact): How to reach the team.
+
+Signed-in areas (AI Mentor, Academy, Classroom, Outreach, Mind Garden) require a free account.

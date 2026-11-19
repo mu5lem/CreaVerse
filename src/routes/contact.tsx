@@ -6,9 +6,15 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact CreaVerse — Get in touch" },
-      { name: "description", content: "Reach the CreaVerse team by email, Facebook, or Instagram." },
+      {
+        name: "description",
+        content: "Reach the CreaVerse team by email, Facebook, or Instagram.",
+      },
       { property: "og:title", content: "Contact CreaVerse" },
-      { property: "og:description", content: "Reach the CreaVerse team by email, Facebook, or Instagram." },
+      {
+        property: "og:description",
+        content: "Reach the CreaVerse team by email, Facebook, or Instagram.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -22,7 +28,9 @@ function ContactPage() {
       <div className="mx-auto max-w-4xl px-6 py-10">
         <BackButton to="/" />
         <div className="mt-6">
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">Contact Us</h1>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
+            Contact Us
+          </h1>
           <p className="mt-2 text-muted-foreground">
             We'd love to hear from you — questions, feedback, partnerships, or just to say hi.
           </p>

@@ -110,7 +110,9 @@ export function DirectMessagePanel({
                   }`}
                 >
                   <div className="whitespace-pre-wrap">{m.content}</div>
-                  <div className={`mt-0.5 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                  <div
+                    className={`mt-0.5 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                  >
                     {new Date(m.created_at).toLocaleString()}
                   </div>
                 </div>

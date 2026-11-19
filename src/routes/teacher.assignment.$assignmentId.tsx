@@ -56,18 +56,26 @@ function AssignmentGrading() {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [subs, setSubs] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [drafts, setDrafts] = useState<Record<string, { grade: string; feedback: string; marks: MarkMap }>>({});
+  const [drafts, setDrafts] = useState<
+    Record<string, { grade: string; feedback: string; marks: MarkMap }>
+  >({});
   const [saving, setSaving] = useState<string | null>(null);
 
   const openFile = async (path: string) => {
-    const { data, error } = await supabase.storage.from("classroom-files").createSignedUrl(path, 300);
+    const { data, error } = await supabase.storage
+      .from("classroom-files")
+      .createSignedUrl(path, 300);
     if (error) return toast.error(error.message);
     window.open(data.signedUrl, "_blank");
   };
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: a } = await supabase.from("assignments").select("*").eq("id", assignmentId).maybeSingle();
+    const { data: a } = await supabase
+      .from("assignments")
+      .select("*")
+      .eq("id", assignmentId)
+      .maybeSingle();
     setAssignment((a as Assignment | null) ?? null);
     const { data: s } = await supabase
       .from("submissions")
@@ -79,7 +87,10 @@ function AssignmentGrading() {
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, email")
-        .in("id", list.map((x) => x.student_id));
+        .in(
+          "id",
+          list.map((x) => x.student_id),
+        );
       const emails = new Map((profs ?? []).map((p) => [p.id, p.email]));
       list.forEach((x) => (x.student_email = emails.get(x.student_id) ?? null));
     }
@@ -162,7 +173,14 @@ function AssignmentGrading() {
       setSubs((prev) =>
         prev.map((x) =>
           x.id === id
-            ? { ...x, answers: answersBlob, obtained_marks: obtained, percentage: percent, grade: String(percent), feedback: d.feedback || null }
+            ? {
+                ...x,
+                answers: answersBlob,
+                obtained_marks: obtained,
+                percentage: percent,
+                grade: String(percent),
+                feedback: d.feedback || null,
+              }
             : x,
         ),
       );
@@ -183,15 +201,26 @@ function AssignmentGrading() {
     setSaving(id);
     const { error } = await supabase
       .from("submissions")
-      .update({ grade: gradeToSave, percentage: gradeToSave === null ? null : parseFloat(gradeToSave), feedback: d.feedback || null })
+      .update({
+        grade: gradeToSave,
+        percentage: gradeToSave === null ? null : parseFloat(gradeToSave),
+        feedback: d.feedback || null,
+      })
       .eq("id", id)
       .select()
       .single();
     setSaving(null);
     if (error) return toast.error(error.message);
     toast.success("Remarks saved");
-    setSubs((prev) => prev.map((x) => (x.id === id ? { ...x, grade: gradeToSave, feedback: d.feedback || null } : x)));
-    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], grade: gradeToSave ?? "", feedback: d.feedback ?? "" } }));
+    setSubs((prev) =>
+      prev.map((x) =>
+        x.id === id ? { ...x, grade: gradeToSave, feedback: d.feedback || null } : x,
+      ),
+    );
+    setDrafts((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], grade: gradeToSave ?? "", feedback: d.feedback ?? "" },
+    }));
   };
 
   const isSaved = (s: Submission): boolean => {
@@ -200,7 +229,9 @@ function AssignmentGrading() {
     if (isQuiz) {
       const { percent, unchecked } = quizResult(s.id);
       if (unchecked > 0) return false;
-      return s.grade !== null && parseFloat(s.grade) === percent && (s.feedback ?? "") === d.feedback;
+      return (
+        s.grade !== null && parseFloat(s.grade) === percent && (s.feedback ?? "") === d.feedback
+      );
     }
     const savedGrade = s.grade ?? "";
     const savedFeedback = s.feedback ?? "";
@@ -212,7 +243,12 @@ function AssignmentGrading() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader title="Grading" role={profile.role} email={profile.email} onSignOut={signOut} />
+      <DashboardHeader
+        title="Grading"
+        role={profile.role}
+        email={profile.email}
+        onSignOut={signOut}
+      />
       <div className="mx-auto max-w-5xl px-6 py-6">
         <BackButton />
       </div>
@@ -258,7 +294,10 @@ function AssignmentGrading() {
             ) : (
               <div className="space-y-4">
                 {subs.map((s) => (
-                  <div key={s.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                  <div
+                    key={s.id}
+                    className="rounded-2xl border border-border bg-card p-5 shadow-sm"
+                  >
                     <div className="mb-3 flex items-center justify-between">
                       <div className="text-sm font-medium text-foreground">
                         {s.student_email ?? s.student_id}
@@ -294,29 +333,32 @@ function AssignmentGrading() {
                           {quizResult(s.id).percent}%
                         </div>
                       ) : (
-                      <div className="relative">
-                        <input
-                          inputMode="decimal"
-                          placeholder="Grade %"
-                          value={drafts[s.id]?.grade ?? ""}
-                          onChange={(e) =>
-                            setDrafts({
-                              ...drafts,
-                              [s.id]: { ...drafts[s.id], grade: clampPercent(e.target.value) },
-                            })
-                          }
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-7 text-sm"
-                        />
-                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                          %
-                        </span>
-                      </div>
+                        <div className="relative">
+                          <input
+                            inputMode="decimal"
+                            placeholder="Grade %"
+                            value={drafts[s.id]?.grade ?? ""}
+                            onChange={(e) =>
+                              setDrafts({
+                                ...drafts,
+                                [s.id]: { ...drafts[s.id], grade: clampPercent(e.target.value) },
+                              })
+                            }
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-7 text-sm"
+                          />
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
                       )}
                       <input
                         placeholder="Feedback"
                         value={drafts[s.id]?.feedback ?? ""}
                         onChange={(e) =>
-                          setDrafts({ ...drafts, [s.id]: { ...drafts[s.id], feedback: e.target.value } })
+                          setDrafts({
+                            ...drafts,
+                            [s.id]: { ...drafts[s.id], feedback: e.target.value },
+                          })
                         }
                         className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       />

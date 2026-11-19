@@ -7,9 +7,17 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: `About ${brand.name} — Our Mission for Pakistani Education` },
-      { name: "description", content: "CreaVerse is a learning universe built to close Pakistan's education gap — founded by Muhammad Muslim of Dera Ghazi Khan." },
+      {
+        name: "description",
+        content:
+          "CreaVerse is a learning universe built to close Pakistan's education gap — founded by Muhammad Muslim of Dera Ghazi Khan.",
+      },
       { property: "og:title", content: `About — ${brand.name}` },
-      { property: "og:description", content: "Our mission: bring quality learning to every child, especially in Pakistan's underprivileged regions." },
+      {
+        property: "og:description",
+        content:
+          "Our mission: bring quality learning to every child, especially in Pakistan's underprivileged regions.",
+      },
       { property: "og:url", content: "/about" },
       { property: "og:type", content: "website" },
     ],
@@ -24,9 +32,7 @@ function AboutPage() {
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-8">
         <Link to="/" className="flex items-center gap-3">
           <BookLogo size={32} className="text-[var(--color-ink)]" />
-          <span className="font-display text-xl font-semibold text-foreground">
-            {brand.name}
-          </span>
+          <span className="font-display text-xl font-semibold text-foreground">{brand.name}</span>
         </Link>
         <Link
           to="/"
@@ -48,9 +54,7 @@ function AboutPage() {
             <br />
             <span className="text-[var(--color-ember)]">not a privilege.</span>
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            {brand.fullPitch}
-          </p>
+          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{brand.fullPitch}</p>
         </header>
 
         {/* Mottos & slogans */}
@@ -61,9 +65,9 @@ function AboutPage() {
             </div>
             <h2 className="font-display text-lg text-foreground">Our Motto</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              <em className="not-italic font-semibold text-foreground">Learn. Visualize. Build.</em>
-              {" "}Three verbs, one promise — knowledge should feel alive, and every learner
-              deserves to touch it, question it, and shape it.
+              <em className="not-italic font-semibold text-foreground">Learn. Visualize. Build.</em>{" "}
+              Three verbs, one promise — knowledge should feel alive, and every learner deserves to
+              touch it, question it, and shape it.
             </p>
           </div>
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -75,8 +79,8 @@ function AboutPage() {
               <em className="not-italic font-semibold text-foreground">
                 Education for Everyone — a learning universe for every child.
               </em>{" "}
-              From a village school in South Punjab to a city classroom in Karachi,
-              the same tools, the same dignity, the same doors.
+              From a village school in South Punjab to a city classroom in Karachi, the same tools,
+              the same dignity, the same doors.
             </p>
           </div>
         </section>
@@ -87,50 +91,55 @@ function AboutPage() {
             Why {brand.name} exists
           </h2>
           <p>
-            Pakistan is home to one of the largest young populations on earth — yet
-            over <strong>26 million children</strong> remain out of school, and millions
-            more sit inside classrooms where a single overworked teacher, a broken
-            blackboard, and a decades-old textbook are the only bridge to the world.
-            In districts like <strong>Dera Ghazi Khan, Rajanpur, Tharparkar, and the
-            merged tribal districts of KP</strong>, the reality is even starker: crumbling
-            infrastructure, no science labs, no libraries, no internet, and daughters
-            pulled out of school long before they can dream.
+            Pakistan is home to one of the largest young populations on earth — yet over{" "}
+            <strong>26 million children</strong> remain out of school, and millions more sit inside
+            classrooms where a single overworked teacher, a broken blackboard, and a decades-old
+            textbook are the only bridge to the world. In districts like{" "}
+            <strong>
+              Dera Ghazi Khan, Rajanpur, Tharparkar, and the merged tribal districts of KP
+            </strong>
+            , the reality is even starker: crumbling infrastructure, no science labs, no libraries,
+            no internet, and daughters pulled out of school long before they can dream.
           </p>
           <p>
             The problem is not that Pakistani children can't learn. It is that
-            <em> quality learning has become a luxury good</em> — locked inside
-            elite private schools, expensive tuition academies, and English-medium
-            curricula that most families can never afford. A child in Islamabad's
-            F-7 sector and a child in a Basti outside DG Khan share the same
-            curiosity, the same intelligence, the same capacity for wonder. They do
-            not share the same chance.
+            <em> quality learning has become a luxury good</em> — locked inside elite private
+            schools, expensive tuition academies, and English-medium curricula that most families
+            can never afford. A child in Islamabad's F-7 sector and a child in a Basti outside DG
+            Khan share the same curiosity, the same intelligence, the same capacity for wonder. They
+            do not share the same chance.
           </p>
           <p>
-            {brand.name} was built to narrow that gap. Not with slogans, but with
-            software. We put a <strong>free AI mentor</strong> in every learner's
-            pocket, so a student without a private tutor can still ask "why?" at
-            midnight and get a patient answer. We curate <strong>free courses and
-            learning paths</strong> from the best open sources — because a village
-            student deserves to understand, not just memorize. We build a <strong>teacher studio</strong>
-            where a single motivated ustaad in Layyah can run a class as
-            professionally as any institute in Lahore, and a <strong>class chat</strong>
+            {brand.name} was built to narrow that gap. Not with slogans, but with software. We put a{" "}
+            <strong>free AI mentor</strong> in every learner's pocket, so a student without a
+            private tutor can still ask "why?" at midnight and get a patient answer. We curate{" "}
+            <strong>free courses and learning paths</strong> from the best open sources — because a
+            village student deserves to understand, not just memorize. We build a{" "}
+            <strong>teacher studio</strong>
+            where a single motivated ustaad in Layyah can run a class as professionally as any
+            institute in Lahore, and a <strong>class chat</strong>
             so students never learn alone.
           </p>
           <p>
-            We index <strong>hundreds of Pakistani and global opportunities</strong>
-            — IBA's National Talent Hunt Program, HEC scholarships, PIEAS, LUMS
-            National Outreach, Rhodes, Gates Cambridge, DAAD — because a talented
-            child in Kot Addu should learn about the same doors that open for a
-            child in Defence. We add a <strong>Pakistan-context academy</strong>
-            with Urdu, Islamiat, Pakistan Studies, and Matric / FSc / CSS prep,
-            because education that ignores your language and your history is not
-            education — it is exile.
+            We index <strong>hundreds of Pakistani and global opportunities</strong>— IBA's National
+            Talent Hunt Program, HEC scholarships, PIEAS, LUMS National Outreach, Rhodes, Gates
+            Cambridge, DAAD — because a talented child in Kot Addu should learn about the same doors
+            that open for a child in Defence. We add a <strong>Pakistan-context academy</strong>
+            with Urdu, Islamiat, Pakistan Studies, and Matric / FSc / CSS prep, because education
+            that ignores your language and your history is not education — it is exile.
           </p>
           <p>
-            Our promise is simple: as long as a child has a phone and a spark of
-            curiosity, {brand.name} will meet them where they are, in the language
-            they think in, for free. Quality education should not depend on your
-            postcode. It should depend on nothing at all.
+            To keep it simple, {brand.name} is organised into three groups:
+            <strong> School-in-a-Box</strong> (the AI Mentor, the Academy and your Classroom),{" "}
+            <strong>Outreach</strong> (opportunities, contests and learning communities in one
+            directory) and <strong>Mind Garden</strong>
+            (a private journal and a memory game for a calmer, steadier mind).
+          </p>
+          <p>
+            Our promise is simple: as long as a child has a phone and a spark of curiosity,{" "}
+            {brand.name} will meet them where they are, in the language they think in, for free.
+            Quality education should not depend on your postcode. It should depend on nothing at
+            all.
           </p>
 
           <h2 className="mt-10 font-display text-3xl font-semibold tracking-tight text-foreground">
@@ -149,14 +158,15 @@ function AboutPage() {
                 Founder — Dera Ghazi Khan, Pakistan
               </div>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Muhammad Muslim grew up in <strong>Dera Ghazi Khan</strong>, watching
-                brilliant classmates leave school one by one — not because they
-                couldn't learn, but because the system around them couldn't teach.
-                Years later, that memory became a mission. He built {brand.name} as
-                a single, honest answer to a question he could never stop asking:
+                Muhammad Muslim grew up in <strong>Dera Ghazi Khan</strong>, watching brilliant
+                classmates leave school one by one — not because they couldn't learn, but because
+                the system around them couldn't teach. Years later, that memory became a mission. He
+                built {brand.name} as a single, honest answer to a question he could never stop
+                asking:
                 <em>
-                  {" "}what if every child in Pakistan had the same access to
-                  learning as the luckiest one?
+                  {" "}
+                  what if every child in Pakistan had the same access to learning as the luckiest
+                  one?
                 </em>
               </p>
             </div>

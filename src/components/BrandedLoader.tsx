@@ -11,9 +11,7 @@ export function BrandedLoader({ label = "Loading" }: { label?: string }) {
           </div>
         </div>
         <div className="text-center">
-          <div className="font-display text-2xl tracking-tight text-foreground">
-            CreaVerse
-          </div>
+          <div className="font-display text-2xl tracking-tight text-foreground">CreaVerse</div>
           <div className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
             {label}
           </div>

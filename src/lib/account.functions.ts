@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-
 export const deleteCurrentAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -14,7 +13,10 @@ export const deleteCurrentAccount = createServerFn({ method: "POST" })
     await supabaseAdmin.from("journal_entries").delete().eq("user_id", userId);
     await supabaseAdmin.from("onboarding_responses").delete().eq("user_id", userId);
     await supabaseAdmin.from("feedback").delete().eq("user_id", userId);
-    await supabaseAdmin.from("direct_messages").delete().or(`sender_id.eq.${userId},student_id.eq.${userId},teacher_id.eq.${userId}`);
+    await supabaseAdmin
+      .from("direct_messages")
+      .delete()
+      .or(`sender_id.eq.${userId},student_id.eq.${userId},teacher_id.eq.${userId}`);
     await supabaseAdmin.from("chat_messages").delete().eq("sender_id", userId);
     await supabaseAdmin.from("submissions").delete().eq("student_id", userId);
     await supabaseAdmin.from("enrollments").delete().eq("student_id", userId);

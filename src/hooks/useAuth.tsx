@@ -117,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
       setProfile(null);
       setLoading(false);
-
     })();
     return () => {
       cancelled = true;

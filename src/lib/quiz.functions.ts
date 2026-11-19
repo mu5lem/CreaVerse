@@ -63,8 +63,10 @@ Return JSON of the form:
           response_format: { type: "json_object" },
         }),
       });
-      if (res.status === 429) return { ok: false as const, error: "Rate limit reached. Please try again shortly." };
-      if (res.status === 402) return { ok: false as const, error: "AI credits exhausted. Please contact the admin." };
+      if (res.status === 429)
+        return { ok: false as const, error: "Rate limit reached. Please try again shortly." };
+      if (res.status === 402)
+        return { ok: false as const, error: "AI credits exhausted. Please contact the admin." };
       if (!res.ok) {
         const text = await res.text();
         console.error("quiz gateway error", res.status, text);
@@ -84,7 +86,8 @@ Return JSON of the form:
         parsed = JSON.parse(match[0]);
       }
       const shape = z.object({ questions: z.array(questionSchema).min(1) }).safeParse(parsed);
-      if (!shape.success) return { ok: false as const, error: "Generator returned malformed questions." };
+      if (!shape.success)
+        return { ok: false as const, error: "Generator returned malformed questions." };
       return { ok: true as const, questions: shape.data.questions };
     } catch (err) {
       console.error("generateQuiz failed", err);

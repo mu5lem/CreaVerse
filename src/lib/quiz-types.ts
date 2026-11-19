@@ -32,13 +32,13 @@ export type Answer =
 export type AnswerMap = Record<string, Answer>;
 
 export function newQuestion(kind: QuestionKind): Question {
-  const id = (typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   if (kind === "mcq")
     return { id, kind, prompt: "", options: ["", ""], correctIndex: null, points: 1 };
-  if (kind === "tf")
-    return { id, kind, prompt: "", correct: null, points: 1 };
+  if (kind === "tf") return { id, kind, prompt: "", correct: null, points: 1 };
   return { id, kind: "short", prompt: "", answer: null, points: 1 };
 }
 
@@ -47,7 +47,10 @@ export function totalPoints(qs: Question[]): number {
 }
 
 /** Auto-score with the current questions. Short answers only count if teacher set an expected answer. */
-export function autoScore(qs: Question[], answers: AnswerMap): { earned: number; possible: number; graded: number } {
+export function autoScore(
+  qs: Question[],
+  answers: AnswerMap,
+): { earned: number; possible: number; graded: number } {
   let earned = 0;
   let possible = 0;
   let graded = 0;
@@ -71,9 +74,11 @@ export function autoScore(qs: Question[], answers: AnswerMap): { earned: number;
         possible += q.points;
         graded += q.points;
         if (
-          a && a.kind === "short" &&
+          a &&
+          a.kind === "short" &&
           a.text.trim().toLowerCase() === q.answer.trim().toLowerCase()
-        ) earned += q.points;
+        )
+          earned += q.points;
       } else {
         possible += q.points; // still worth points, but requires manual review
       }
@@ -106,7 +111,9 @@ export function isAutoCorrect(q: Question, a: Answer | undefined): boolean | nul
 export function answerText(q: Question, a: Answer | undefined): string {
   if (!a) return "— no answer —";
   if (q.kind === "mcq" && a.kind === "mcq")
-    return a.selectedIndex === null ? "— no answer —" : (q.options[a.selectedIndex] || `Option ${a.selectedIndex + 1}`);
+    return a.selectedIndex === null
+      ? "— no answer —"
+      : q.options[a.selectedIndex] || `Option ${a.selectedIndex + 1}`;
   if (q.kind === "tf" && a.kind === "tf")
     return a.value === null ? "— no answer —" : a.value ? "True" : "False";
   if (q.kind === "short" && a.kind === "short") return a.text.trim() || "— no answer —";

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -6,7 +6,8 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, LogOut } from "lucide-react";
+import { Upload, FileText, LogOut, Sparkles } from "lucide-react";
+import { mentorPromptFor, mentorSubjectFor } from "@/lib/academy-utils";
 import { ClassChat } from "@/components/ClassChat";
 import { LinkPreview } from "@/components/LinkPreview";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
@@ -66,23 +67,41 @@ function StudentClass() {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [editingSub, setEditingSub] = useState<Record<string, string>>({});
   const [enrollment, setEnrollment] = useState<{ suspended: boolean } | null>(null);
-  const [pendingRequest, setPendingRequest] = useState<{ kind: "leave" | "reactivate" } | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<{ kind: "leave" | "reactivate" } | null>(
+    null,
+  );
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [leaveReason, setLeaveReason] = useState("");
   const [submittingLeave, setSubmittingLeave] = useState(false);
   const confirm = useConfirm();
 
-
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data: c }, { data: asn }, { data: subs }, { data: enr }, { data: reqs }] = await Promise.all([
-      supabase.from("classes").select("*").eq("class_code", classCode).maybeSingle(),
-      supabase.from("assignments").select("*").eq("class_code", classCode).order("created_at", { ascending: false }).limit(100),
-      supabase.from("submissions").select("*").eq("student_id", user.id).limit(200),
-      supabase.from("enrollments").select("suspended").eq("class_code", classCode).eq("student_id", user.id).maybeSingle(),
-      supabase.from("enrollment_requests").select("kind").eq("class_code", classCode).eq("student_id", user.id).eq("status", "pending").limit(1),
-    ]);
+    const [{ data: c }, { data: asn }, { data: subs }, { data: enr }, { data: reqs }] =
+      await Promise.all([
+        supabase.from("classes").select("*").eq("class_code", classCode).maybeSingle(),
+        supabase
+          .from("assignments")
+          .select("*")
+          .eq("class_code", classCode)
+          .order("created_at", { ascending: false })
+          .limit(100),
+        supabase.from("submissions").select("*").eq("student_id", user.id).limit(200),
+        supabase
+          .from("enrollments")
+          .select("suspended")
+          .eq("class_code", classCode)
+          .eq("student_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("enrollment_requests")
+          .select("kind")
+          .eq("class_code", classCode)
+          .eq("student_id", user.id)
+          .eq("status", "pending")
+          .limit(1),
+      ]);
     let classRow = (c as ClassRow | null) ?? null;
     if (classRow?.teacher_id) {
       const { data: t } = await supabase
@@ -124,7 +143,9 @@ function StudentClass() {
           return next;
         });
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classCode]);
 
@@ -132,17 +153,22 @@ function StudentClass() {
     const t = setTimeout(() => {
       try {
         const notesOnly: Record<string, string> = {};
-        Object.entries(drafts).forEach(([aid, d]) => { if (d.notes) notesOnly[aid] = d.notes; });
+        Object.entries(drafts).forEach(([aid, d]) => {
+          if (d.notes) notesOnly[aid] = d.notes;
+        });
         if (Object.keys(notesOnly).length === 0) window.localStorage.removeItem(draftsKey);
         else window.localStorage.setItem(draftsKey, JSON.stringify(notesOnly));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }, 500);
     return () => clearTimeout(t);
   }, [drafts, draftsKey]);
 
-
   const openFile = async (path: string) => {
-    const { data, error } = await supabase.storage.from("classroom-files").createSignedUrl(path, 300);
+    const { data, error } = await supabase.storage
+      .from("classroom-files")
+      .createSignedUrl(path, 300);
     if (error) return toast.error(error.message);
     window.open(data.signedUrl, "_blank");
   };
@@ -188,12 +214,21 @@ function StudentClass() {
   const deleteSubmission = async (a: Assignment) => {
     const sub = submissions[a.id];
     if (!sub || !user) return;
-    const ok = await confirm({ title: "Delete your submission?", description: "You can submit again after this.", confirmText: "Delete", destructive: true });
+    const ok = await confirm({
+      title: "Delete your submission?",
+      description: "You can submit again after this.",
+      confirmText: "Delete",
+      destructive: true,
+    });
     if (!ok) return;
     if (sub.file_url) {
       await supabase.storage.from("classroom-files").remove([sub.file_url]);
     }
-    const { error } = await supabase.from("submissions").delete().eq("id", sub.id).eq("student_id", user.id);
+    const { error } = await supabase
+      .from("submissions")
+      .delete()
+      .eq("id", sub.id)
+      .eq("student_id", user.id);
     if (error) return toast.error(error.message);
     toast.success("Submission deleted");
     await load();
@@ -270,7 +305,12 @@ function StudentClass() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader title="Class" role={profile.role} email={profile.email} onSignOut={signOut} />
+      <DashboardHeader
+        title="Class"
+        role={profile.role}
+        email={profile.email}
+        onSignOut={signOut}
+      />
       <div className="mx-auto max-w-5xl px-6 py-6">
         <BackButton to="/student/dashboard" />
       </div>
@@ -305,12 +345,17 @@ function StudentClass() {
                 )}
                 {pendingRequest ? (
                   <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
-                    {pendingRequest.kind === "leave" ? "Leave request pending teacher approval" : "Reactivation request pending"}
+                    {pendingRequest.kind === "leave"
+                      ? "Leave request pending teacher approval"
+                      : "Reactivation request pending"}
                   </span>
                 ) : (
                   <button
                     type="button"
-                    onClick={() => { setLeaveReason(""); setLeaveOpen(true); }}
+                    onClick={() => {
+                      setLeaveReason("");
+                      setLeaveOpen(true);
+                    }}
                     className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition hover:border-destructive/60 hover:text-destructive"
                   >
                     <LogOut className="h-3.5 w-3.5" />
@@ -319,7 +364,6 @@ function StudentClass() {
                 )}
               </div>
             </div>
-
 
             <h2 className="mb-4 font-display text-2xl text-foreground">Assignments</h2>
             {assignments.length === 0 ? (
@@ -332,7 +376,10 @@ function StudentClass() {
                   const sub = submissions[a.id];
                   const draft = drafts[a.id] ?? { notes: "", file: null };
                   return (
-                    <div key={a.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                    <div
+                      key={a.id}
+                      className="rounded-2xl border border-border bg-card p-5 shadow-sm"
+                    >
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-display text-lg text-foreground">{a.title}</h3>
@@ -364,6 +411,16 @@ function StudentClass() {
                           <LinkPreview url={a.link_url} title={a.title} />
                         </div>
                       )}
+                      <Link
+                        to="/mentor"
+                        search={{
+                          subject: mentorSubjectFor(`${a.title} ${cls.title}`),
+                          prompt: mentorPromptFor(a.title),
+                        }}
+                        className="mt-3 inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        <Sparkles className="h-3 w-3" /> Ask the Mentor about this
+                      </Link>
 
                       {a.assignment_kind === "quiz" ? (
                         (() => {
@@ -374,7 +431,9 @@ function StudentClass() {
                           return (
                             <div className="mt-4 rounded-lg border border-border bg-background p-3">
                               <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Quiz — {qs.length} question{qs.length === 1 ? "" : "s"}</span>
+                                <span>
+                                  Quiz — {qs.length} question{qs.length === 1 ? "" : "s"}
+                                </span>
                                 <span>{total} pts total</span>
                               </div>
                               <QuizTaker
@@ -391,11 +450,15 @@ function StudentClass() {
                                       {sub.obtained_marks ?? 0} / {total}
                                     </span>
                                     {sub.grade && (
-                                      <span className="ml-2 text-muted-foreground">({sub.grade}%)</span>
+                                      <span className="ml-2 text-muted-foreground">
+                                        ({sub.grade}%)
+                                      </span>
                                     )}
                                   </p>
                                   {sub.feedback && (
-                                    <p className="mt-1 text-sm text-muted-foreground">{sub.feedback}</p>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                      {sub.feedback}
+                                    </p>
                                   )}
                                   <p className="mt-2 text-xs text-muted-foreground">
                                     Submitted {new Date(sub.submitted_at).toLocaleString()}
@@ -420,7 +483,9 @@ function StudentClass() {
                               <textarea
                                 value={editingSub[a.id]}
                                 rows={2}
-                                onChange={(e) => setEditingSub({ ...editingSub, [a.id]: e.target.value })}
+                                onChange={(e) =>
+                                  setEditingSub({ ...editingSub, [a.id]: e.target.value })
+                                }
                                 className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
                               />
                               <div className="flex gap-2">
@@ -457,7 +522,9 @@ function StudentClass() {
                           {!sub.grade && editingSub[a.id] === undefined && (
                             <div className="mt-2 flex gap-2">
                               <button
-                                onClick={() => setEditingSub({ ...editingSub, [a.id]: sub.notes ?? "" })}
+                                onClick={() =>
+                                  setEditingSub({ ...editingSub, [a.id]: sub.notes ?? "" })
+                                }
                                 className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground transition hover:bg-secondary"
                               >
                                 Edit notes
@@ -548,8 +615,14 @@ function StudentClass() {
         )}
       </main>
       {leaveOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !submittingLeave && setLeaveOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !submittingLeave && setLeaveOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+          >
             <div className="mb-3 font-display text-lg text-foreground">
               {enrollment?.suspended ? "Request reactivation" : "Request to leave this class"}
             </div>
@@ -564,8 +637,18 @@ function StudentClass() {
               className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
             <div className="mt-3 flex justify-end gap-2">
-              <button onClick={() => setLeaveOpen(false)} disabled={submittingLeave} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
-              <button onClick={submitLeaveRequest} disabled={submittingLeave} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
+              <button
+                onClick={() => setLeaveOpen(false)}
+                disabled={submittingLeave}
+                className="rounded-full border border-border px-4 py-2 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitLeaveRequest}
+                disabled={submittingLeave}
+                className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              >
                 {submittingLeave ? "Sending…" : "Send request"}
               </button>
             </div>

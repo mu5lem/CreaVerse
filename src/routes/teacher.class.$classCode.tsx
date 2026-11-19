@@ -7,16 +7,32 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BackButton } from "@/components/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Users, Upload, MessageSquare, X, CalendarIcon, Pencil, Trash2 } from "lucide-react";
+import {
+  FileText,
+  Users,
+  Upload,
+  MessageSquare,
+  X,
+  CalendarIcon,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { ClassChat } from "@/components/ClassChat";
 import { LinkPreview } from "@/components/LinkPreview";
+import { AcademyPicker } from "@/components/AcademyPicker";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { QuizBuilder } from "@/components/QuizBuilder";
@@ -84,7 +100,12 @@ function ClassDetail() {
   const [creating, setCreating] = useState(false);
   const [dmStudent, setDmStudent] = useState<StudentRow | null>(null);
   const [editingClass, setEditingClass] = useState(false);
-  const [classDraft, setClassDraft] = useState({ title: "", class_code: "", grade: "", description: "" });
+  const [classDraft, setClassDraft] = useState({
+    title: "",
+    class_code: "",
+    grade: "",
+    description: "",
+  });
   const [savingClass, setSavingClass] = useState(false);
   const [deleteClassOpen, setDeleteClassOpen] = useState(false);
   const [deletingClass, setDeletingClass] = useState(false);
@@ -108,33 +129,71 @@ function ClassDetail() {
     if (!user) return;
     setLoading(true);
     const [{ data: c }, { data: enr }, { data: asn }, { data: reqs }] = await Promise.all([
-      supabase.from("classes").select("*").eq("class_code", classCode).eq("teacher_id", user.id).maybeSingle(),
-      supabase.from("enrollments").select("student_id, enrolled_at, suspended").eq("class_code", classCode),
-      supabase.from("assignments").select("*").eq("class_code", classCode).order("created_at", { ascending: false }),
-      supabase.from("enrollment_requests").select("*").eq("class_code", classCode).eq("status", "pending").order("created_at", { ascending: false }),
+      supabase
+        .from("classes")
+        .select("*")
+        .eq("class_code", classCode)
+        .eq("teacher_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("enrollments")
+        .select("student_id, enrolled_at, suspended")
+        .eq("class_code", classCode),
+      supabase
+        .from("assignments")
+        .select("*")
+        .eq("class_code", classCode)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("enrollment_requests")
+        .select("*")
+        .eq("class_code", classCode)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false }),
     ]);
     setCls((c as ClassRow | null) ?? null);
     setAssignments((asn ?? []) as Assignment[]);
 
-    const enrRows = (enr ?? []) as { student_id: string; enrolled_at: string; suspended: boolean }[];
+    const enrRows = (enr ?? []) as {
+      student_id: string;
+      enrolled_at: string;
+      suspended: boolean;
+    }[];
     const susMap: Record<string, boolean> = {};
-    enrRows.forEach((e) => { susMap[e.student_id] = !!e.suspended; });
+    enrRows.forEach((e) => {
+      susMap[e.student_id] = !!e.suspended;
+    });
     setSuspendedMap(susMap);
     const reqRows = (reqs ?? []) as EnrollmentRequest[];
 
-    const allIds = Array.from(new Set([...enrRows.map((e) => e.student_id), ...reqRows.map((r) => r.student_id)]));
+    const allIds = Array.from(
+      new Set([...enrRows.map((e) => e.student_id), ...reqRows.map((r) => r.student_id)]),
+    );
     let profMap = new Map<string, { email: string | null; full_name: string | null }>();
     if (allIds.length > 0) {
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, email, full_name")
         .in("id", allIds);
-      profMap = new Map((profs ?? []).map((p) => [p.id, { email: p.email ?? null, full_name: (p as { full_name?: string | null }).full_name ?? null }]));
+      profMap = new Map(
+        (profs ?? []).map((p) => [
+          p.id,
+          {
+            email: p.email ?? null,
+            full_name: (p as { full_name?: string | null }).full_name ?? null,
+          },
+        ]),
+      );
     }
     setStudents(
       enrRows.map((e) => {
         const p = profMap.get(e.student_id);
-        return { ...e, email: p?.email ?? null, full_name: p?.full_name ?? null, suspended: e.suspended };
+        return {
+          ...e,
+          email: p?.email ?? null,
+          full_name: p?.full_name ?? null,
+          suspended: e.suspended,
+        };
       }),
     );
     setRequests(
@@ -163,17 +222,18 @@ function ClassDetail() {
         if (Number.isNaN(d.getTime())) throw new Error("Invalid due date");
         dueIso = d.toISOString();
       }
-      if (asnKind === "quiz" && questions.length === 0) throw new Error("Add at least one question");
+      if (asnKind === "quiz" && questions.length === 0)
+        throw new Error("Add at least one question");
       const { data: created, error } = await supabase
         .from("assignments")
         .insert({
           class_code: classCode,
           title: form.title.trim(),
           description: form.description.trim() || null,
-          link_url: asnKind === "quiz" ? null : (form.link_url.trim() || null),
+          link_url: asnKind === "quiz" ? null : form.link_url.trim() || null,
           due_date: dueIso,
           assignment_kind: asnKind,
-          questions: asnKind === "quiz" ? (JSON.parse(JSON.stringify(questions))) : null,
+          questions: asnKind === "quiz" ? JSON.parse(JSON.stringify(questions)) : null,
           total_marks: asnKind === "quiz" ? totalPoints(questions) : null,
         })
         .select("*")
@@ -261,7 +321,9 @@ function ClassDetail() {
     if (a.due_date) {
       const d = new Date(a.due_date);
       setAsnDueDate(d);
-      setAsnDueTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+      setAsnDueTime(
+        `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+      );
     } else {
       setAsnDueDate(undefined);
       setAsnDueTime("23:59");
@@ -282,14 +344,15 @@ function ClassDetail() {
       d.setHours(Number.isFinite(hh) ? hh : 23, Number.isFinite(mm) ? mm : 59, 0, 0);
       dueIso = d.toISOString();
     }
-    if (editAsnKind === "quiz" && editQuestions.length === 0) return toast.error("Add at least one question");
+    if (editAsnKind === "quiz" && editQuestions.length === 0)
+      return toast.error("Add at least one question");
     setSavingAsn(true);
     const { error } = await supabase
       .from("assignments")
       .update({
         title,
         description: asnDraft.description.trim() || null,
-        link_url: editAsnKind === "quiz" ? null : (asnDraft.link_url.trim() || null),
+        link_url: editAsnKind === "quiz" ? null : asnDraft.link_url.trim() || null,
         due_date: dueIso,
         assignment_kind: editAsnKind,
         questions: editAsnKind === "quiz" ? JSON.parse(JSON.stringify(editQuestions)) : null,
@@ -308,10 +371,18 @@ function ClassDetail() {
     // If leave approved → delete enrollment. If reactivate approved → set suspended=false.
     if (status === "approved") {
       if (r.kind === "leave") {
-        const { error } = await supabase.from("enrollments").delete().eq("class_code", r.class_code).eq("student_id", r.student_id);
+        const { error } = await supabase
+          .from("enrollments")
+          .delete()
+          .eq("class_code", r.class_code)
+          .eq("student_id", r.student_id);
         if (error) return toast.error(error.message);
       } else {
-        const { error } = await supabase.from("enrollments").update({ suspended: false }).eq("class_code", r.class_code).eq("student_id", r.student_id);
+        const { error } = await supabase
+          .from("enrollments")
+          .update({ suspended: false })
+          .eq("class_code", r.class_code)
+          .eq("student_id", r.student_id);
         if (error) return toast.error(error.message);
       }
     }
@@ -339,7 +410,12 @@ function ClassDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader title="Class" role={profile.role} email={profile.email} onSignOut={signOut} />
+      <DashboardHeader
+        title="Class"
+        role={profile.role}
+        email={profile.email}
+        onSignOut={signOut}
+      />
       <div className="mx-auto max-w-6xl px-6 py-6">
         <BackButton to="/teacher/dashboard" />
       </div>
@@ -390,24 +466,35 @@ function ClassDetail() {
                 </div>
                 {students.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No students yet. Share the code <span className="font-mono">{cls.class_code}</span>.
+                    No students yet. Share the code{" "}
+                    <span className="font-mono">{cls.class_code}</span>.
                   </p>
                 ) : (
                   <ul className="space-y-2 text-sm">
                     {students.map((s) => {
                       const displayName = s.full_name?.trim() || s.email || s.student_id;
                       return (
-                        <li key={s.student_id} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--color-parchment)]/50 px-3 py-2">
+                        <li
+                          key={s.student_id}
+                          className="flex items-center justify-between gap-2 rounded-lg bg-[var(--color-parchment)]/50 px-3 py-2"
+                        >
                           <button
                             type="button"
                             onClick={() => setReportStudent(s)}
                             className="min-w-0 flex-1 text-left"
                           >
                             <div className="truncate font-medium text-foreground hover:text-[var(--color-ember)]">
-                              {displayName}{s.suspended && <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive">suspended</span>}
+                              {displayName}
+                              {s.suspended && (
+                                <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive">
+                                  suspended
+                                </span>
+                              )}
                             </div>
                             {s.full_name && s.email && (
-                              <div className="truncate text-xs text-muted-foreground">{s.email}</div>
+                              <div className="truncate text-xs text-muted-foreground">
+                                {s.email}
+                              </div>
                             )}
                             <div className="text-[10px] text-muted-foreground">
                               Joined {new Date(s.enrolled_at).toLocaleDateString()}
@@ -431,7 +518,9 @@ function ClassDetail() {
               {/* Enrollment requests */}
               {requests.length > 0 && (
                 <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                  <h2 className="mb-3 font-display text-lg text-foreground">Pending student requests</h2>
+                  <h2 className="mb-3 font-display text-lg text-foreground">
+                    Pending student requests
+                  </h2>
                   <ul className="space-y-2 text-sm">
                     {requests.map((r) => (
                       <li key={r.id} className="rounded-lg border border-border bg-background p-3">
@@ -439,14 +528,34 @@ function ClassDetail() {
                           <div className="min-w-0">
                             <div className="font-medium text-foreground">
                               {r.student_name || r.student_email || r.student_id} —{" "}
-                              <span className="text-[var(--color-ember)]">{r.kind === "leave" ? "Requesting to leave" : "Requesting reactivation"}</span>
+                              <span className="text-[var(--color-ember)]">
+                                {r.kind === "leave"
+                                  ? "Requesting to leave"
+                                  : "Requesting reactivation"}
+                              </span>
                             </div>
-                            {r.reason && <div className="mt-1 text-xs text-muted-foreground">Reason: {r.reason}</div>}
-                            <div className="mt-1 text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</div>
+                            {r.reason && (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                Reason: {r.reason}
+                              </div>
+                            )}
+                            <div className="mt-1 text-[10px] text-muted-foreground">
+                              {new Date(r.created_at).toLocaleString()}
+                            </div>
                           </div>
                           <div className="flex shrink-0 gap-2">
-                            <button onClick={() => decideRequest(r, "approved")} className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">Approve</button>
-                            <button onClick={() => decideRequest(r, "denied")} className="rounded-full border border-border px-3 py-1 text-xs font-medium hover:border-destructive hover:text-destructive">Deny</button>
+                            <button
+                              onClick={() => decideRequest(r, "approved")}
+                              className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => decideRequest(r, "denied")}
+                              className="rounded-full border border-border px-3 py-1 text-xs font-medium hover:border-destructive hover:text-destructive"
+                            >
+                              Deny
+                            </button>
                           </div>
                         </div>
                       </li>
@@ -456,15 +565,40 @@ function ClassDetail() {
               )}
 
               {/* Create assignment */}
-              <form onSubmit={createAssignment} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <form
+                onSubmit={createAssignment}
+                className="rounded-2xl border border-border bg-card p-6 shadow-sm"
+              >
                 <div className="mb-4 flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <h2 className="font-display text-lg text-foreground">New assignment</h2>
                 </div>
                 <div className="space-y-3">
                   <div className="inline-flex rounded-full border border-border bg-background p-1 text-xs">
-                    <button type="button" onClick={() => setAsnKind("plain")} className={cn("rounded-full px-3 py-1 font-medium", asnKind === "plain" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Text / File</button>
-                    <button type="button" onClick={() => setAsnKind("quiz")} className={cn("rounded-full px-3 py-1 font-medium", asnKind === "quiz" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Quiz</button>
+                    <button
+                      type="button"
+                      onClick={() => setAsnKind("plain")}
+                      className={cn(
+                        "rounded-full px-3 py-1 font-medium",
+                        asnKind === "plain"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      Text / File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAsnKind("quiz")}
+                      className={cn(
+                        "rounded-full px-3 py-1 font-medium",
+                        asnKind === "quiz"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      Quiz
+                    </button>
                   </div>
                   <input
                     required
@@ -533,13 +667,23 @@ function ClassDetail() {
                         onChange={(e) => setForm({ ...form, link_url: e.target.value })}
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       />
+                      <AcademyPicker onPick={(url) => setForm({ ...form, link_url: url })} />
                       {form.link_url.trim() && (
-                        <LinkPreview url={form.link_url.trim()} title={form.title.trim() || undefined} />
+                        <LinkPreview
+                          url={form.link_url.trim()}
+                          title={form.title.trim() || undefined}
+                        />
                       )}
                       <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2 text-sm text-muted-foreground">
                         <Upload className="h-4 w-4" />
-                        <span className="truncate">{file ? file.name : "Attach a file (optional)"}</span>
-                        <input type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                        <span className="truncate">
+                          {file ? file.name : "Attach a file (optional)"}
+                        </span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                        />
                       </label>
                     </>
                   ) : (
@@ -556,7 +700,11 @@ function ClassDetail() {
                     disabled={creating}
                     className="w-full rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
                   >
-                    {creating ? "Creating…" : (asnKind === "quiz" ? "Publish quiz" : "Publish assignment")}
+                    {creating
+                      ? "Creating…"
+                      : asnKind === "quiz"
+                        ? "Publish quiz"
+                        : "Publish assignment"}
                   </button>
                 </div>
               </form>
@@ -631,7 +779,9 @@ function ClassDetail() {
           >
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Private message</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Private message
+                </div>
                 <div className="font-display text-lg text-foreground">
                   {dmStudent.full_name?.trim() || dmStudent.email || "Student"}
                 </div>
@@ -657,20 +807,64 @@ function ClassDetail() {
 
       {/* Edit class dialog */}
       {editingClass && cls && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !savingClass && setEditingClass(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !savingClass && setEditingClass(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+          >
             <div className="mb-4 flex items-center justify-between">
               <div className="font-display text-lg text-foreground">Edit class</div>
-              <button onClick={() => setEditingClass(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+              <button
+                onClick={() => setEditingClass(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
             <div className="space-y-3">
-              <input placeholder="Class title" value={classDraft.title} onChange={(e) => setClassDraft({ ...classDraft, title: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-              <input placeholder="Class code" value={classDraft.class_code} onChange={(e) => setClassDraft({ ...classDraft, class_code: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase" />
-              <input placeholder="Grade / level (optional)" value={classDraft.grade} onChange={(e) => setClassDraft({ ...classDraft, grade: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-              <textarea placeholder="Description (optional)" value={classDraft.description} onChange={(e) => setClassDraft({ ...classDraft, description: e.target.value })} rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <input
+                placeholder="Class title"
+                value={classDraft.title}
+                onChange={(e) => setClassDraft({ ...classDraft, title: e.target.value })}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+              <input
+                placeholder="Class code"
+                value={classDraft.class_code}
+                onChange={(e) => setClassDraft({ ...classDraft, class_code: e.target.value })}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase"
+              />
+              <input
+                placeholder="Grade / level (optional)"
+                value={classDraft.grade}
+                onChange={(e) => setClassDraft({ ...classDraft, grade: e.target.value })}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+              <textarea
+                placeholder="Description (optional)"
+                value={classDraft.description}
+                onChange={(e) => setClassDraft({ ...classDraft, description: e.target.value })}
+                rows={3}
+                className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
               <div className="flex justify-end gap-2 pt-1">
-                <button onClick={() => setEditingClass(false)} disabled={savingClass} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
-                <button onClick={saveClass} disabled={savingClass} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{savingClass ? "Saving…" : "Save"}</button>
+                <button
+                  onClick={() => setEditingClass(false)}
+                  disabled={savingClass}
+                  className="rounded-full border border-border px-4 py-2 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveClass}
+                  disabled={savingClass}
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                >
+                  {savingClass ? "Saving…" : "Save"}
+                </button>
               </div>
             </div>
           </div>
@@ -679,39 +873,117 @@ function ClassDetail() {
 
       {/* Edit assignment dialog */}
       {editingAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !savingAsn && setEditingAssignment(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !savingAsn && setEditingAssignment(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+          >
             <div className="mb-4 flex items-center justify-between">
               <div className="font-display text-lg text-foreground">Edit assignment</div>
-              <button onClick={() => setEditingAssignment(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+              <button
+                onClick={() => setEditingAssignment(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
             <div className="space-y-3">
-              <input placeholder="Title" value={asnDraft.title} onChange={(e) => setAsnDraft({ ...asnDraft, title: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-              <textarea placeholder="Instructions (optional)" value={asnDraft.description} onChange={(e) => setAsnDraft({ ...asnDraft, description: e.target.value })} rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-              <label className="block text-xs uppercase tracking-wider text-muted-foreground">Due date</label>
+              <input
+                placeholder="Title"
+                value={asnDraft.title}
+                onChange={(e) => setAsnDraft({ ...asnDraft, title: e.target.value })}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+              <textarea
+                placeholder="Instructions (optional)"
+                value={asnDraft.description}
+                onChange={(e) => setAsnDraft({ ...asnDraft, description: e.target.value })}
+                rows={3}
+                className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground">
+                Due date
+              </label>
               <div className="flex gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button type="button" className={cn("flex-1 inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-left text-sm", !asnDueDate && "text-muted-foreground")}>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex-1 inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-left text-sm",
+                        !asnDueDate && "text-muted-foreground",
+                      )}
+                    >
                       <CalendarIcon className="h-4 w-4" />
                       {asnDueDate ? format(asnDueDate, "PPP") : "Pick a date"}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={asnDueDate} onSelect={setAsnDueDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                    <Calendar
+                      mode="single"
+                      selected={asnDueDate}
+                      onSelect={setAsnDueDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
                   </PopoverContent>
                 </Popover>
-                <input type="time" value={asnDueTime} onChange={(e) => setAsnDueTime(e.target.value)} className="w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                <input
+                  type="time"
+                  value={asnDueTime}
+                  onChange={(e) => setAsnDueTime(e.target.value)}
+                  className="w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
                 {asnDueDate && (
-                  <button type="button" onClick={() => setAsnDueDate(undefined)} className="rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Clear</button>
+                  <button
+                    type="button"
+                    onClick={() => setAsnDueDate(undefined)}
+                    className="rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
                 )}
               </div>
               <div className="inline-flex rounded-full border border-border bg-background p-1 text-xs">
-                <button type="button" onClick={() => setEditAsnKind("plain")} className={cn("rounded-full px-3 py-1 font-medium", editAsnKind === "plain" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Text / File</button>
-                <button type="button" onClick={() => setEditAsnKind("quiz")} className={cn("rounded-full px-3 py-1 font-medium", editAsnKind === "quiz" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>Quiz</button>
+                <button
+                  type="button"
+                  onClick={() => setEditAsnKind("plain")}
+                  className={cn(
+                    "rounded-full px-3 py-1 font-medium",
+                    editAsnKind === "plain"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Text / File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditAsnKind("quiz")}
+                  className={cn(
+                    "rounded-full px-3 py-1 font-medium",
+                    editAsnKind === "quiz"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Quiz
+                </button>
               </div>
               {editAsnKind === "plain" ? (
-                <input type="url" placeholder="Attach a link (optional)" value={asnDraft.link_url} onChange={(e) => setAsnDraft({ ...asnDraft, link_url: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                <div className="space-y-2">
+                  <input
+                    type="url"
+                    placeholder="Attach a link (optional)"
+                    value={asnDraft.link_url}
+                    onChange={(e) => setAsnDraft({ ...asnDraft, link_url: e.target.value })}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <AcademyPicker onPick={(url) => setAsnDraft({ ...asnDraft, link_url: url })} />
+                </div>
               ) : (
                 <div className="max-h-[50vh] overflow-y-auto rounded-lg border border-border bg-background p-3">
                   <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -722,8 +994,20 @@ function ClassDetail() {
                 </div>
               )}
               <div className="flex justify-end gap-2 pt-1">
-                <button onClick={() => setEditingAssignment(null)} disabled={savingAsn} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
-                <button onClick={saveAssignment} disabled={savingAsn} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">{savingAsn ? "Saving…" : "Save"}</button>
+                <button
+                  onClick={() => setEditingAssignment(null)}
+                  disabled={savingAsn}
+                  className="rounded-full border border-border px-4 py-2 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAssignment}
+                  disabled={savingAsn}
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                >
+                  {savingAsn ? "Saving…" : "Save"}
+                </button>
               </div>
             </div>
           </div>
@@ -740,7 +1024,14 @@ function ClassDetail() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deletingClass}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteClass(); }} disabled={deletingClass} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDeleteClass();
+              }}
+              disabled={deletingClass}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deletingClass ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -752,12 +1043,25 @@ function ClassDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this assignment?</AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDeleteAsn && <>Delete <span className="font-medium text-foreground">"{pendingDeleteAsn.title}"</span>? This also removes all submissions for it.</>}
+              {pendingDeleteAsn && (
+                <>
+                  Delete{" "}
+                  <span className="font-medium text-foreground">"{pendingDeleteAsn.title}"</span>?
+                  This also removes all submissions for it.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deletingAsn}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteAssignment(); }} disabled={deletingAsn} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDeleteAssignment();
+              }}
+              disabled={deletingAsn}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deletingAsn ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

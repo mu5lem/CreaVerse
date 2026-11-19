@@ -10,7 +10,6 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
         "rounded-xl border bg-card text-card-foreground shadow transition-shadow duration-200 hover:shadow-md",
         className,
       )}
-
       {...props}
     />
   ),

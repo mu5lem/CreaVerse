@@ -17,7 +17,9 @@ interface ChatMessage {
 export function ClassChat({ classCode }: { classCode: string }) {
   const { user, profile } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [senders, setSenders] = useState<Record<string, { email: string; full_name: string | null; role: string }>>({});
+  const [senders, setSenders] = useState<
+    Record<string, { email: string; full_name: string | null; role: string }>
+  >({});
   const [text, setText, clearText] = useDraft(`draft:chat:${classCode}`);
   const confirm = useConfirm();
   const [sending, setSending] = useState(false);
@@ -26,23 +28,26 @@ export function ClassChat({ classCode }: { classCode: string }) {
   const [editText, setEditText] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const loadSenderProfiles = useCallback(async (ids: string[]) => {
-    const missing = ids.filter((id) => !senders[id]);
-    if (missing.length === 0) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, email, full_name, role")
-      .in("id", missing);
-    if (data) {
-      setSenders((prev) => {
-        const next = { ...prev };
-        data.forEach((p) => {
-          next[p.id] = { email: p.email, full_name: p.full_name, role: p.role };
+  const loadSenderProfiles = useCallback(
+    async (ids: string[]) => {
+      const missing = ids.filter((id) => !senders[id]);
+      if (missing.length === 0) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, role")
+        .in("id", missing);
+      if (data) {
+        setSenders((prev) => {
+          const next = { ...prev };
+          data.forEach((p) => {
+            next[p.id] = { email: p.email, full_name: p.full_name, role: p.role };
+          });
+          return next;
         });
-        return next;
-      });
-    }
-  }, [senders]);
+      }
+    },
+    [senders],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +79,12 @@ export function ClassChat({ classCode }: { classCode: string }) {
       .channel(`chat:${classCode}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `class_code=eq.${classCode}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `class_code=eq.${classCode}`,
+        },
         (payload) => {
           const msg = payload.new as ChatMessage;
           setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
@@ -83,7 +93,12 @@ export function ClassChat({ classCode }: { classCode: string }) {
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "chat_messages", filter: `class_code=eq.${classCode}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chat_messages",
+          filter: `class_code=eq.${classCode}`,
+        },
         (payload) => {
           const msg = payload.new as ChatMessage;
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? msg : m)));
@@ -91,7 +106,12 @@ export function ClassChat({ classCode }: { classCode: string }) {
       )
       .on(
         "postgres_changes",
-        { event: "DELETE", schema: "public", table: "chat_messages", filter: `class_code=eq.${classCode}` },
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "chat_messages",
+          filter: `class_code=eq.${classCode}`,
+        },
         (payload) => {
           const old = payload.old as { id: string };
           setMessages((prev) => prev.filter((m) => m.id !== old.id));
@@ -144,7 +164,6 @@ export function ClassChat({ classCode }: { classCode: string }) {
     }
   };
 
-
   const beginEdit = (m: ChatMessage) => {
     setEditingId(m.id);
     setEditText(m.message_text);
@@ -166,7 +185,11 @@ export function ClassChat({ classCode }: { classCode: string }) {
 
   const deleteMessage = async (id: string) => {
     if (!user) return;
-    const ok = await confirm({ title: "Delete this message?", confirmText: "Delete", destructive: true });
+    const ok = await confirm({
+      title: "Delete this message?",
+      confirmText: "Delete",
+      destructive: true,
+    });
     if (!ok) return;
     const { error } = await supabase
       .from("chat_messages")
@@ -201,13 +224,15 @@ export function ClassChat({ classCode }: { classCode: string }) {
               const isTeacher = senders[m.sender_id]?.role === "teacher";
               return (
                 <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                    isTeacher
-                      ? "border border-[var(--color-ember)]/50 bg-[var(--color-ember)]/10 text-foreground"
-                      : mine
-                        ? "bg-[var(--color-ember)]/15 text-foreground"
-                        : "bg-background text-foreground"
-                  }`}>
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                      isTeacher
+                        ? "border border-[var(--color-ember)]/50 bg-[var(--color-ember)]/10 text-foreground"
+                        : mine
+                          ? "bg-[var(--color-ember)]/15 text-foreground"
+                          : "bg-background text-foreground"
+                    }`}
+                  >
                     <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                       <span>{nameFor(m.sender_id)}</span>
                       {isTeacher && (
@@ -215,7 +240,13 @@ export function ClassChat({ classCode }: { classCode: string }) {
                           Teacher
                         </span>
                       )}
-                      <span>· {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span>
+                        ·{" "}
+                        {new Date(m.created_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                     </div>
                     {editingId === m.id ? (
                       <div className="mt-1 space-y-1">
